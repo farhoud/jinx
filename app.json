@@ -22,18 +22,34 @@
       "backgroundImage": "./assets/images/app-icon-android-adaptive-background.png"
     },
     "allowBackup": false,
-    "edgeToEdgeEnabled": true
+    "edgeToEdgeEnabled": true,
+    "permissions": [
+      "BLUETOOTH",
+      "BLUETOOTH_ADMIN",
+      "BLUETOOTH_SCAN",
+      "BLUETOOTH_CONNECT",
+      "ACCESS_FINE_LOCATION",
+      "POST_NOTIFICATIONS",
+      "FOREGROUND_SERVICE"
+    ]
   },
   "ios": {
     "icon": "./assets/images/app-icon-ios.png",
     "supportsTablet": true,
-    "bundleIdentifier": "com.jinxapp"
+    "bundleIdentifier": "com.jinxapp",
+    "NSBluetoothAlwaysUsageDescription": "This app requires Bluetooth to connect to your ESP32 device."
   },
   "web": {
     "favicon": "./assets/images/app-icon-web-favicon.png",
     "bundler": "metro"
   },
   "plugins": [
+    [
+      "expo-notifications",
+      {
+        "color": "#ffffff"
+      }
+    ],
     "expo-localization",
     "expo-font",
     [
@@ -43,6 +59,17 @@
         "imageWidth": 300,
         "resizeMode": "contain",
         "backgroundColor": "#191015"
+      }
+    ],
+    [
+      "react-native-ble-plx",
+      {
+        "isBackgroundEnabled": true,
+        "modes": [
+          "peripheral",
+          "central"
+        ],
+        "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to bluetooth devices"
       }
     ],
     [
@@ -64,6 +91,10 @@
   "extra": {
     "ignite": {
       "version": "11.3.2"
+    },
+    "router": {},
+    "eas": {
+      "projectId": "dcce7835-bae0-4530-a56f-8e0ce2ac5d32"
     }
   }
 }

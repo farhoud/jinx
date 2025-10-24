@@ -1,11 +1,19 @@
-# Welcome to your new ignited app!
+# Process Control Assistant
 
-> The latest and greatest boilerplate for Infinite Red opinions
+## Overview
 
-This is the boilerplate that [Infinite Red](https://infinite.red) uses as a way to test bleeding-edge changes to our React Native stack.
+The Process Control Assistant is a React Native mobile application designed to operate offline, guiding users through complex, temperature-critical, and time-sensitive workflows such as brewing, cooking, or chemical processes. The app minimizes user error and ensures repeatability by providing real-time sensor feedback, configurable recipes, and critical alerts for manual control of heating and cooling elements.
 
-- [Quick start documentation](https://github.com/infinitered/ignite/blob/master/docs/boilerplate/Boilerplate.md)
-- [Full documentation](https://github.com/infinitered/ignite/blob/master/docs/README.md)
+## Features
+
+- **Recipe Configuration**: Users can define and save process steps, including target temperatures, durations, and ingredient additions.
+- **Active Batch Dashboard**: Displays real-time temperature, rate of change, and step-specific progress with a clear visual timeline.
+- **Alerts & Notifications**:
+  - **Critical Dialogs**: Loud, disruptive alerts with modals for major state changes (e.g., target temperature reached, step completion).
+  - **Soft Reminders**: Non-disruptive notifications (vibration, toast) for repetitive tasks (e.g., stirring).
+- **Real-Time Monitoring**: Visualizes temperature history and acceptable ranges, with dynamic indicators for out-of-bounds conditions.
+- **Configurable Event Model**: Supports triggers based on temperature targets, elapsed time, intervals, and boundary violations.
+- **Offline Functionality**: All features work without an internet connection, with recipes stored locally.
 
 ## Getting Started
 
