@@ -7,14 +7,14 @@ import EventBus from "@/services/event-bus"
 export const useBLE = () => {
   const [temperature, setTemperature] = useState<number | null>(null)
   const [ratePerMinute, setRatePerMinute] = useState<number>(0)
-  const [isConnected, setIsConnected] = useState(false)
+  const [status, setStatus] = useState<string>("disconnected")
 
   useEffect(() => {
     const handleTemp = ({ smoothed, ratePerMinute }: any) => {
       setTemperature(smoothed)
       setRatePerMinute(ratePerMinute)
     }
-    const handleStatus = ({ status }: any) => setIsConnected(status === "connected")
+    const handleStatus = ({ status }: any) => setStatus(status)
 
     EventBus.on("tempSmoothed", handleTemp)
     EventBus.on("bleStatus", handleStatus)
@@ -34,5 +34,5 @@ export const useBLE = () => {
 
   const sendCommand = async (cmd: string, value: any) => await BLEService.sendCommand(cmd, value)
 
-  return { temperature, ratePerMinute, isConnected, sendCommand }
+  return { temperature, ratePerMinute, status, sendCommand }
 }

@@ -8,15 +8,16 @@ import {
   Easing,
   Dimensions,
 } from "react-native"
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake"
 import { useRouter, useFocusEffect } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 
 import RecipeStepsList from "@/components/RecipeStepsList"
-import TemperatureDisplayWidget from "@/components/TemperatureDisplayWidget"
 import { Screen } from "@/components/Screen"
+import TemperatureDisplayWidget from "@/components/TemperatureDisplayWidget"
 import { useRecipe } from "@/context/RecipeContext"
-import { loadRecipes } from "@/utils/storage/recipeStorage"
 import { useBLE } from "@/hooks/useBLE"
+import { loadRecipes } from "@/utils/storage/recipeStorage"
 
 const { width } = Dimensions.get("window")
 
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
 
 const BrewingScreen = () => {
   const router = useRouter()
-  const { temperature: currentTemp, ratePerMinute, isConnected } = useBLE()
+  const { temperature: currentTemp, ratePerMinute, status } = useBLE()
   const [recipes, setRecipes] = useState(loadRecipes())
 
   const {
@@ -222,6 +223,14 @@ const BrewingScreen = () => {
       flashAnim.setValue(0)
     }
   }, [alarmActive])
+
+  useEffect(() => {
+    if (isBrewing) {
+      activateKeepAwakeAsync()
+    } else {
+      deactivateKeepAwake()
+    }
+  }, [isBrewing])
 
   const borderColor = flashAnim.interpolate({
     inputRange: [0, 1],
@@ -312,9 +321,27 @@ const BrewingScreen = () => {
           <Ionicons name="beer" size={40} color={colors.secondary} />
           <Text style={styles.title}>Brewing Control</Text>
           <Text
-            style={[styles.status, { color: isConnected ? colors.connected : colors.disconnected }]}
+            style={[
+              styles.status,
+              {
+                color:
+                  status === "connected" || status === "reconnecting"
+                    ? colors.connected
+                    : colors.disconnected,
+              },
+            ]}
           >
-            {isConnected ? "Device Connected" : "Device Disconnected"}
+            {status === "connected"
+              ? "Device Connected"
+              : status === "reconnecting"
+                ? "Reconnecting..."
+                : status === "scanning"
+                  ? "Scanning for device..."
+                  : status === "disconnected"
+                    ? "Device Disconnected"
+                    : status === "timeout"
+                      ? "Connection timeout"
+                      : "Unknown status"}
           </Text>
         </View>
 

@@ -1,4 +1,4 @@
-import { Platform, AppState } from "react-native"
+import { Platform } from "react-native"
 import { Buffer } from "buffer"
 import { BleManager, Device, Subscription } from "react-native-ble-plx"
 
@@ -19,6 +19,7 @@ class BLEService {
   private tempSubscription: Subscription | null = null
   private currentTemp: number | null = null
   private isScanning = false
+  private isConnected = false
 
   private constructor() {
     this.manager = new BleManager({ restoreStateIdentifier: "BLEStateRestore" })
@@ -69,14 +70,18 @@ class BLEService {
     try {
       this.device = await device.connect()
       await this.device.discoverAllServicesAndCharacteristics()
+      this.isConnected = true
       await this.setupNotifications()
       EventBus.emit("bleStatus", { status: "connected", device: device.name || undefined })
 
       this.manager.onDeviceDisconnected(device.id, () => {
+        this.isConnected = false
         this.device = null
         this.tempSubscription?.remove()
         EventBus.emit("bleStatus", { status: "disconnected", device: device.name || undefined })
-        if (AppState.currentState !== "active") setTimeout(() => this.scanAndConnect(), 5000)
+        EventBus.emit("bleStatus", { status: "reconnecting" })
+        // Attempt to reconnect after a short delay
+        setTimeout(() => this.scanAndConnect(), 2000)
       })
     } catch (err: any) {
       EventBus.emit("bleError", { message: err.message })
@@ -89,11 +94,16 @@ class BLEService {
       SERVICE_UUID,
       TEMP_CHAR_UUID,
       (err, char) => {
+        if (!this.isConnected) return // Ignore callbacks after disconnection
         if (err) return EventBus.emit("bleError", { message: err.message })
         if (char?.value) {
-          const temp = base64ToFloat(char.value)
-          this.currentTemp = temp
-          EventBus.emit("tempUpdate", temp)
+          try {
+            const temp = base64ToFloat(char.value)
+            this.currentTemp = temp
+            EventBus.emit("tempUpdate", temp)
+          } catch {
+            EventBus.emit("bleError", { message: "Invalid temperature data received" })
+          }
         }
       },
     )
