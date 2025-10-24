@@ -21,9 +21,9 @@ import {
   SoftReminder,
 } from "@/types/recipeTypes"
 
-interface EventEditorScreenProps { }
+interface EventEditorScreenProps {}
 
-export default function EventEditorScreen({ }: EventEditorScreenProps) {
+export default function EventEditorScreen({}: EventEditorScreenProps) {
   const { theme } = useAppTheme()
   const router = useRouter()
   const params = useLocalSearchParams()
@@ -75,7 +75,6 @@ export default function EventEditorScreen({ }: EventEditorScreenProps) {
         } else if (event.trigger.type === "TIME_ELAPSED") {
           setElapsedMinutes(event.trigger.valueMinutes.toString())
         }
-
       }
     }
   }, [isEditing, stepId, eventId, editingRecipe])

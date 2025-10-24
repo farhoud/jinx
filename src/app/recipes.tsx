@@ -6,8 +6,8 @@ import { Ionicons } from "@expo/vector-icons"
 import { Header } from "@/components/Header"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { useAppTheme } from "@/theme/context"
 import { useRecipe } from "@/context/RecipeContext"
+import { useAppTheme } from "@/theme/context"
 import { loadRecipes, deleteRecipe } from "@/utils/storage/recipeStorage"
 
 const { width } = Dimensions.get("window")

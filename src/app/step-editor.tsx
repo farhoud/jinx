@@ -22,9 +22,9 @@ import {
 
 const { width } = Dimensions.get("window")
 
-interface StepEditorScreenProps { }
+interface StepEditorScreenProps {}
 
-export default function StepEditorScreen({ }: StepEditorScreenProps) {
+export default function StepEditorScreen({}: StepEditorScreenProps) {
   const { theme } = useAppTheme()
   const router = useRouter()
   const params = useLocalSearchParams()
