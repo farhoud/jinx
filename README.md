@@ -1,34 +1,50 @@
-# Process Control Assistant
+# JinxApp - Brewing Control Assistant
 
 ## Overview
 
-The Process Control Assistant is a React Native mobile application designed to operate offline, guiding users through complex, temperature-critical, and time-sensitive workflows such as brewing, cooking, or chemical processes. The app minimizes user error and ensures repeatability by providing real-time sensor feedback, configurable recipes, and critical alerts for manual control of heating and cooling elements.
+JinxApp is a React Native mobile application for offline brewing process control. It guides users through temperature-critical brewing workflows using real-time sensor feedback from an IoT device. The app ensures repeatability with configurable recipes, step-by-step instructions, and alerts for manual heating/cooling control.
+
+The app connects via Bluetooth Low Energy (BLE) to an ESP32-based IoT device that monitors temperature and allows sending commands for process control.
 
 ## Features
 
-- **Recipe Configuration**: Users can define and save process steps, including target temperatures, durations, and ingredient additions.
-- **Active Batch Dashboard**: Displays real-time temperature, rate of change, and step-specific progress with a clear visual timeline.
+- **BLE Connectivity**: Connects to ESP32 IoT device for real-time temperature monitoring and command sending.
+- **Recipe Management**: Create, edit, and save brewing recipes with steps including target temperatures, time intervals, and boundary conditions.
+- **Real-Time Dashboard**: Displays current temperature, rate of change, and recipe progress with visual indicators.
+- **Automated Reconnection**: Automatically attempts to reconnect to the IoT device on disconnection.
 - **Alerts & Notifications**:
-  - **Critical Dialogs**: Loud, disruptive alerts with modals for major state changes (e.g., target temperature reached, step completion).
-  - **Soft Reminders**: Non-disruptive notifications (vibration, toast) for repetitive tasks (e.g., stirring).
-- **Real-Time Monitoring**: Visualizes temperature history and acceptable ranges, with dynamic indicators for out-of-bounds conditions.
-- **Configurable Event Model**: Supports triggers based on temperature targets, elapsed time, intervals, and boundary violations.
-- **Offline Functionality**: All features work without an internet connection, with recipes stored locally.
+  - **Critical Alerts**: Modal dialogs for temperature targets, step completion, and boundary violations.
+  - **Soft Reminders**: Notifications for timed intervals and repetitive tasks.
+- **Offline Operation**: Fully functional without internet, with local recipe storage.
+- **Temperature Monitoring**: Smoothed temperature readings with rate calculations for precise control.
+
+## Hardware Setup
+
+The app requires an ESP32-based IoT device running the firmware in `esp32/jinx.ino`. The device provides BLE services for temperature reading and command execution.
+
+- Service UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b
+- Temperature Characteristic: beb5483e-36e1-4688-b7f5-ea07361b26a8
+- Command Characteristic: 1a7e8e50-9d0d-457e-97f6-68f447781f8f
+
+Upload the firmware to your ESP32 and ensure it's advertising as "ESP32_TEMP_SERVER".
 
 ## Getting Started
 
 ```bash
-yarn install
-yarn start
+npm install
+npm start
 ```
 
-To make things work on your local simulator, or on your phone, you need first to [run `eas build`](https://github.com/infinitered/ignite/blob/master/docs/expo/EAS.md). We have many shortcuts on `package.json` to make it easier:
+For device builds, use EAS:
 
 ```bash
-yarn build:ios:sim # build for ios simulator
-yarn build:ios:device # build for ios device
-yarn build:ios:prod # build for ios device
+npm run build:android:device  # Android device
+npm run build:ios:device      # iOS device
+npm run build:android:sim     # Android emulator
+npm run build:ios:sim         # iOS simulator
 ```
+
+Grant location and Bluetooth permissions when prompted.
 
 ### `./assets` directory
 
@@ -62,9 +78,21 @@ const MyComponent = () => {
 };
 ```
 
-## Running Maestro end-to-end tests
+## Testing
 
-Follow our [Maestro Setup](https://ignitecookbook.com/docs/recipes/MaestroSetup) recipe.
+Run unit tests:
+
+```bash
+npm test
+```
+
+Run end-to-end tests with Maestro:
+
+```bash
+npm run test:maestro
+```
+
+Follow the [Maestro Setup](https://ignitecookbook.com/docs/recipes/MaestroSetup) recipe for E2E testing.
 
 ## Next Steps
 
@@ -76,10 +104,12 @@ Follow our [Maestro Setup](https://ignitecookbook.com/docs/recipes/MaestroSetup)
 
 Read our [Upgrade Guide](https://ignitecookbook.com/docs/recipes/UpdatingIgnite) to learn how to upgrade your Ignite project.
 
+## Troubleshooting
+
+- **BLE Connection Issues**: Ensure the ESP32 is powered and advertising. Check Bluetooth permissions.
+- **App Crashes**: The app handles disconnections gracefully with automatic reconnection.
+- **Temperature Not Updating**: Verify the IoT device is connected and sending data.
+
 ## Community
 
-⭐️ Help us out by [starring on GitHub](https://github.com/infinitered/ignite), filing bug reports in [issues](https://github.com/infinitered/ignite/issues) or [ask questions](https://github.com/infinitered/ignite/discussions).
-
-💬 Join us on [Slack](https://join.slack.com/t/infiniteredcommunity/shared_invite/zt-1f137np4h-zPTq_CbaRFUOR_glUFs2UA) to discuss.
-
-📰 Make our Editor-in-chief happy by [reading the React Native Newsletter](https://reactnativenewsletter.com/).
+For support, file issues on GitHub or join the React Native community discussions.
