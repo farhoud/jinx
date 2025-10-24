@@ -21,9 +21,9 @@ import {
   SoftReminder,
 } from "@/types/recipeTypes"
 
-interface EventEditorScreenProps {}
+interface EventEditorScreenProps { }
 
-export default function EventEditorScreen({}: EventEditorScreenProps) {
+export default function EventEditorScreen({ }: EventEditorScreenProps) {
   const { theme } = useAppTheme()
   const router = useRouter()
   const params = useLocalSearchParams()
@@ -32,17 +32,6 @@ export default function EventEditorScreen({}: EventEditorScreenProps) {
   const stepId = params.stepId as string
   const eventId = params.eventId as string | undefined
   const isEditing = !!eventId
-
-  console.log(
-    "EventEditor params:",
-    params,
-    "stepId:",
-    stepId,
-    "eventId:",
-    eventId,
-    "isEditing:",
-    isEditing,
-  )
 
   const [triggerType, setTriggerType] = useState<TriggerType>("TIME_ELAPSED")
   const [notificationType, setNotificationType] = useState<NotificationType>("SOFT_REMINDER")
@@ -63,7 +52,6 @@ export default function EventEditorScreen({}: EventEditorScreenProps) {
 
   // Notification fields
   const [message, setMessage] = useState("")
-  const [actionButtonText, setActionButtonText] = useState("")
 
   useEffect(() => {
     if (isEditing && editingRecipe) {
@@ -88,9 +76,6 @@ export default function EventEditorScreen({}: EventEditorScreenProps) {
           setElapsedMinutes(event.trigger.valueMinutes.toString())
         }
 
-        if (event.notification.type === "CRITICAL_DIALOG") {
-          setActionButtonText(event.notification.actionButtonText)
-        }
       }
     }
   }, [isEditing, stepId, eventId, editingRecipe])
@@ -126,7 +111,7 @@ export default function EventEditorScreen({}: EventEditorScreenProps) {
 
     let notification: any
     if (notificationType === "CRITICAL_DIALOG") {
-      notification = { type: notificationType, message, actionButtonText } as CriticalDialog
+      notification = { type: notificationType, message } as CriticalDialog
     } else {
       notification = { type: notificationType, message } as SoftReminder
     }
@@ -285,15 +270,6 @@ export default function EventEditorScreen({}: EventEditorScreenProps) {
           placeholder="Notification message"
           multiline
         />
-
-        {notificationType === "CRITICAL_DIALOG" && (
-          <TextField
-            label="Action Button Text"
-            value={actionButtonText}
-            onChangeText={setActionButtonText}
-            placeholder="OK"
-          />
-        )}
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
           <Button text="Cancel" onPress={handleCancel} />

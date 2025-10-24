@@ -112,9 +112,9 @@ export const RecipeEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
         steps: editingRecipe.steps.map((step) =>
           step.stepId === stepId
             ? {
-                ...step,
-                events: step.events.map((e) => (e.eventId === eventId ? event : e)),
-              }
+              ...step,
+              events: step.events.map((e) => (e.eventId === eventId ? event : e)),
+            }
             : step,
         ),
       }

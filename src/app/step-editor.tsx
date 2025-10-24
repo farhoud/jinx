@@ -22,9 +22,9 @@ import {
 
 const { width } = Dimensions.get("window")
 
-interface StepEditorScreenProps {}
+interface StepEditorScreenProps { }
 
-export default function StepEditorScreen({}: StepEditorScreenProps) {
+export default function StepEditorScreen({ }: StepEditorScreenProps) {
   const { theme } = useAppTheme()
   const router = useRouter()
   const params = useLocalSearchParams()
@@ -38,7 +38,7 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
   const [type, setType] = useState<StepType>("TARGET_TEMPERATURE")
   const [name, setName] = useState("New Step")
   const [durationMinutes, setDurationMinutes] = useState("60")
-  const [direction, setDirection] = useState<"HEATING" | "COOLING" | "BOILING">("HEATING")
+  const [direction, setDirection] = useState<"HEATING" | "COOLING">("HEATING")
   const [targetTemperatureC, setTargetTemperatureC] = useState("70")
   const [tempBoundaryHighC, setTempBoundaryHighC] = useState("75")
   const [tempBoundaryLowC, setTempBoundaryLowC] = useState("65")
@@ -103,7 +103,6 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
       } as TemperatureMaintenanceStep
     }
 
-    console.log("Saving step:", step)
     if (isEditing) {
       updateStep(stepId!, step)
     } else {
@@ -158,12 +157,12 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
           />
 
           <Text text="Type" preset="formLabel" />
-          <View style={{ flexDirection: "row", marginVertical: 8 }}>
+          <View style={{ flexDirection: "column", marginVertical: 8 }}>
             <Button
               text="Target Temperature"
               onPress={() => setType("TARGET_TEMPERATURE")}
               preset={type === "TARGET_TEMPERATURE" ? "filled" : "default"}
-              style={{ marginRight: 8 }}
+              style={{ marginBottom: 8 }}
             />
             <Button
               text="Temperature Maintenance"
@@ -187,11 +186,6 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
                   onPress={() => setDirection("COOLING")}
                   preset={direction === "COOLING" ? "filled" : "default"}
                   style={{ marginRight: 8 }}
-                />
-                <Button
-                  text="Boiling"
-                  onPress={() => setDirection("BOILING")}
-                  preset={direction === "BOILING" ? "filled" : "default"}
                 />
               </View>
 

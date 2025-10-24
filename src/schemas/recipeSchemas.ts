@@ -11,7 +11,7 @@ export const stepTypeSchema = z.enum(["TARGET_TEMPERATURE", "TEMPERATURE_MAINTEN
 
 export const notificationTypeSchema = z.enum(["CRITICAL_DIALOG", "SOFT_REMINDER"])
 
-export const directionSchema = z.enum(["HEATING", "COOLING", "BOILING"])
+export const directionSchema = z.enum(["HEATING", "COOLING"])
 
 export const conditionSchema = z.enum([
   "REACHED_OR_EXCEEDED",
@@ -55,7 +55,6 @@ export const notificationSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("CRITICAL_DIALOG"),
     message: z.string().min(1).max(200),
-    actionButtonText: z.string().min(1).max(50),
   }),
   z.object({
     type: z.literal("SOFT_REMINDER"),

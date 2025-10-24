@@ -10,7 +10,7 @@ interface BaseStep {
 interface TemperatureTargetStep extends BaseStep {
   type: "TARGET_TEMPERATURE"
   name: string
-  direction: "HEATING" | "COOLING" | "BOILING"
+  direction: "HEATING" | "COOLING"
   targetTemperatureC: number
 }
 
@@ -64,7 +64,6 @@ interface BaseNotification {
 
 interface CriticalDialog extends BaseNotification {
   type: "CRITICAL_DIALOG"
-  actionButtonText: string
 }
 
 interface SoftReminder extends BaseNotification {

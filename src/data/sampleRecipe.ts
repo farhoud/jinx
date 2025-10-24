@@ -12,15 +12,26 @@ export const sampleRecipe: Recipe = {
       name: "Heating Water",
       type: "TARGET_TEMPERATURE",
       direction: "HEATING",
-      targetTemperatureC: 32.0,
+      targetTemperatureC: 70.0,
       durationMinutes: 0,
       events: [
+        {
+          eventId: "EVT_PUT_BREWING_BACK",
+          trigger: {
+            type: "TIME_ELAPSED",
+            valueMinutes: 0,
+          },
+          notification: {
+            type: "SOFT_REMINDER",
+            message: "Put the brewing bag in",
+          },
+        },
         {
           eventId: "EVT_TARGET_REACHED",
           trigger: {
             type: "TEMPERATURE_TARGET",
             condition: "REACHED_OR_EXCEEDED",
-            valueC: 32.0,
+            valueC: 70.0,
           },
           notification: {
             type: "SOFT_REMINDER",
@@ -34,10 +45,32 @@ export const sampleRecipe: Recipe = {
       stepId: "STEP_MASHING",
       name: "Mashing",
       type: "TEMPERATURE_MAINTENANCE",
-      tempBoundaryLowC: 64.0,
-      tempBoundaryHighC: 68.0,
-      durationMinutes: 60,
+      tempBoundaryLowC: 65.5,
+      tempBoundaryHighC: 68.5,
+      durationMinutes: 70,
       events: [
+        {
+          eventId: "EVT_WATER_SUPPLIMENT",
+          trigger: {
+            type: "TIME_ELAPSED",
+            valueMinutes: 1,
+          },
+          notification: {
+            type: "SOFT_REMINDER",
+            message: "Controll PH and add water suppliments",
+          },
+        },
+        {
+          eventId: "EVT_ADD_ENZYME",
+          trigger: {
+            type: "TIME_ELAPSED",
+            valueMinutes: 5,
+          },
+          notification: {
+            type: "SOFT_REMINDER",
+            message: "Controll PH and add water suppliments",
+          },
+        },
         {
           eventId: "EVT_STIR_10MIN_START",
           trigger: {
@@ -67,12 +100,11 @@ export const sampleRecipe: Recipe = {
           trigger: {
             type: "BOUNDARY_VIOLATION",
             condition: "ABOVE_HIGH",
-            valueC: 68.0,
+            valueC: 68.5,
           },
           notification: {
             type: "CRITICAL_DIALOG",
             message: "Temperature too high! Reduce heat.",
-            actionButtonText: "OK"
           },
         },
         {
@@ -80,19 +112,18 @@ export const sampleRecipe: Recipe = {
           trigger: {
             type: "BOUNDARY_VIOLATION",
             condition: "BELOW_LOW",
-            valueC: 64.0,
+            valueC: 65.5,
           },
           notification: {
             type: "CRITICAL_DIALOG",
             message: "Temperature too low! Increase heat.",
-            actionButtonText: "OK"
           },
         },
         {
           eventId: "EVT_MASH_END",
           trigger: {
             type: "TIME_ELAPSED",
-            valueMinutes: 60,
+            valueMinutes: 70,
           },
           notification: {
             type: "SOFT_REMINDER",
@@ -105,17 +136,17 @@ export const sampleRecipe: Recipe = {
     {
       stepId: "STEP_REACH_BOILING",
       name: "Boil it",
-      type: "TEMPERATURE_MAINTENANCE",
-      tempBoundaryLowC: 95,
-      tempBoundaryHighC: 110,
-      durationMinutes: 110,
+      type: "TARGET_TEMPERATURE",
+      direction: "HEATING",
+      targetTemperatureC: 100.0,
+      durationMinutes: 0,
       events: [
         {
           eventId: "EVT_BOIL_START_CONFIRM",
           trigger: {
             type: "TEMPERATURE_TARGET",
             condition: "REACHED_OR_EXCEEDED",
-            valueC: 95,
+            valueC: 100,
           },
           notification: {
             type: "SOFT_REMINDER",
@@ -127,9 +158,9 @@ export const sampleRecipe: Recipe = {
     {
       stepId: "STEP_BOILING",
       name: "Boiling",
-      type: "TARGET_TEMPERATURE",
-      direction: "BOILING",
-      targetTemperatureC: 100.0,
+      type: "TEMPERATURE_MAINTENANCE",
+      tempBoundaryLowC: 95,
+      tempBoundaryHighC: 105,
       durationMinutes: 60,
       events: [
         {
@@ -144,17 +175,6 @@ export const sampleRecipe: Recipe = {
           },
         },
         {
-          eventId: "EVT_HOPS_15MIN",
-          trigger: {
-            type: "TIME_ELAPSED",
-            valueMinutes: 45,
-          },
-          notification: {
-            type: "SOFT_REMINDER",
-            message: "Time for Flavor Hops!",
-          },
-        },
-        {
           eventId: "EVT_BOIL_END",
           trigger: {
             type: "TIME_ELAPSED",
@@ -163,7 +183,6 @@ export const sampleRecipe: Recipe = {
           notification: {
             type: "CRITICAL_DIALOG",
             message: "Boil complete. Begin cooling.",
-            actionButtonText: "Start Cooling",
           },
         },
       ],

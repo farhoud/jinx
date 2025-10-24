@@ -159,7 +159,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (isForeground) {
         Alert.alert("Brewing Alert", notification.message, [
           {
-            text: notification.actionButtonText || "OK",
+            text: "OK",
             onPress: stopSound,
           },
         ])

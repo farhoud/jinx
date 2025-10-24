@@ -58,8 +58,6 @@ export default function RecipeEditorScreen() {
     validationErrors,
   } = useRecipeEditor()
 
-  console.log("RecipeEditor params:", params, "isNew:", isNew, "editingRecipe:", editingRecipe)
-
   const {
     control,
     handleSubmit,
@@ -89,10 +87,8 @@ export default function RecipeEditorScreen() {
   }, [params.recipeId, loadRecipeForEditing, reset])
 
   const onSubmit = handleSubmit((data) => {
-    console.log("onSubmit called with data:", data)
     updateRecipe(data)
     const saved = saveRecipe()
-    console.log("saveRecipe result:", saved)
     if (saved) {
       if (isNew) {
         addRecipe(saved)
