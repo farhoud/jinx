@@ -3,6 +3,7 @@ import { Alert, AppState } from "react-native"
 import { Audio } from "expo-av"
 import * as Notifications from "expo-notifications"
 
+import { useBLE } from "@/hooks/useBLE"
 import {
   Recipe,
   Step,
@@ -11,8 +12,6 @@ import {
   TimeIntervalTrigger,
   BoundaryTrigger,
 } from "@/types/recipeTypes"
-import { useBLE } from "@/hooks/useBLE"
-
 
 type RecipeContextType = {
   currentRecipe: Recipe | null
