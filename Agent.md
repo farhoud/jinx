@@ -80,7 +80,7 @@ JinxApp is a React Native brewing application that manages recipes with temperat
 ## Key Features
 
 - Recipe management: Create/edit recipes with steps and events.
-- Brewing workflow: Start/stop brewing, navigate steps, activate events based on temp/time. Event state machine manages pending/active/dismissed states, with visible upcoming timers and dismissible notifications. Supports multiple time-elapsed and repeating time-interval events per step.
+- Brewing workflow: Start/stop brewing, navigate steps, activate events based on temp/time. Event state machine manages pending/active/dismissed states, with visible upcoming timers and dismissible notifications. Plays alarm.wav for critical events and reminder.wav for soft reminders. Supports multiple time-elapsed and repeating time-interval events per step.
 - BLE integration: Scan/connect to ESP32_TEMP_SERVER, read temp, send control commands.
 - Theming: Dynamic light/dark mode with MMKV persistence.
 - Validation: Zod schemas for recipes.
