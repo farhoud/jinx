@@ -84,8 +84,6 @@ const TimeIntervalProgress: React.FC<TimeIntervalProgressProps> = ({
           content={`Starts in ${Math.round(timeToStart)} min`}
         />
       )
-    } else {
-      return null
     }
   }
 

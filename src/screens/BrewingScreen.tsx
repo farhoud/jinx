@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { View, ViewStyle } from "react-native"
+import { View, ViewStyle, Text } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
