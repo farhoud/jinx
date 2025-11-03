@@ -135,9 +135,9 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const loadSounds = async () => {
       try {
-        const { sound: alarm } = await Audio.Sound.createAsync(require("../assets/alarm.wav"))
+        const { sound: alarm } = await Audio.Sound.createAsync(require("assets/alarm.wav"))
         setAlarmSound(alarm)
-        const { sound: reminder } = await Audio.Sound.createAsync(require("../assets/reminder.wav"))
+        const { sound: reminder } = await Audio.Sound.createAsync(require("assets/reminder.wav"))
         setReminderSound(reminder)
       } catch (error) {
         console.error("Failed to load sounds:", error)
@@ -369,7 +369,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     })
   }, [currentTemp, currentStepIndex, isBrewing, currentRecipe, eventStates])
 
-  useEffect(() => {})
+  useEffect(() => { })
 
   // Cleanup on unmount
   useEffect(() => {

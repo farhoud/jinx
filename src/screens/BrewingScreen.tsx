@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { View, ViewStyle, Text } from "react-native"
+import { View, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
@@ -7,7 +7,6 @@ import { StepCard } from "@/components/StepCard"
 import { PressableIcon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { TemperatureChart } from "@/components/TemperatureChart"
-import TemperatureStatusCard from "@/components/TemperatureStatusCard"
 import { TemperatureGauge } from "@/components/TemperatureGauge"
 import { TemperatureProgressBar } from "@/components/TemperatureProgressBar"
 import { TimeElapsedProgress } from "@/components/TimeElapsedProgress"
@@ -17,6 +16,7 @@ import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
 import { useAppTheme } from "@/theme/context"
 import { DeviceConnectionStatus } from "@/components/DeviceConnectionStatus"
 import type { ThemedStyle } from "@/theme/types"
+import { spacing } from "@/theme/spacing"
 
 export default function BrewingScreen() {
   const router = useRouter()
@@ -29,10 +29,8 @@ export default function BrewingScreen() {
     nextStep,
     startBrewing,
     eventStates,
-    getActiveEvents,
     dismissEvent,
     dismissTrigger,
-    getElapsedTime,
   } = useRecipe()
   const { temperatureReading } = useTemperatureDevice()
   const [viewingStepIndex, setViewingStepIndex] = useState(currentStepIndex)
@@ -232,7 +230,6 @@ const $root: ThemedStyle<ViewStyle> = () => ({
 
 const $header: ThemedStyle<ViewStyle> = ({ spacing }) => ({
   flexDirection: "row",
-  padding: spacing.sm,
   justifyContent: "space-between",
 })
 
@@ -242,6 +239,7 @@ const $menuIcon: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 
 const $connectionStatus: ThemedStyle<ViewStyle> = () => ({
   alignSelf: "flex-end",
+  padding: spacing.sm
 })
 
 const $startButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
