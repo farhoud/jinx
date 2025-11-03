@@ -12,13 +12,7 @@ import { TextField } from "@/components/TextField"
 import { Radio } from "@/components/Toggle/Radio"
 import { useRecipeEditor } from "@/context/RecipeEditorContext"
 import { useAppTheme } from "@/theme/context"
-import {
-  Step,
-  StepType,
-  TemperatureTargetStep,
-  TemperatureMaintenanceStep,
-  Event,
-} from "@/types/recipeTypes"
+import { Step, Event } from "@/types/recipeTypes"
 
 const { width } = Dimensions.get("window")
 
@@ -35,28 +29,15 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
 
   console.log("StepEditor params:", params, "stepId:", stepId, "isEditing:", isEditing)
 
-  const [type, setType] = useState<StepType>("TARGET_TEMPERATURE")
   const [name, setName] = useState("New Step")
   const [durationMinutes, setDurationMinutes] = useState("60")
-  const [direction, setDirection] = useState<"HEATING" | "COOLING">("HEATING")
-  const [targetTemperatureC, setTargetTemperatureC] = useState("70")
-  const [tempBoundaryHighC, setTempBoundaryHighC] = useState("75")
-  const [tempBoundaryLowC, setTempBoundaryLowC] = useState("65")
 
   useEffect(() => {
     if (isEditing && editingRecipe) {
       const step = editingRecipe.steps.find((s) => s.stepId === stepId)
       if (step) {
-        setType(step.type)
         setName(step.name)
         setDurationMinutes(step.durationMinutes.toString())
-        if (step.type === "TARGET_TEMPERATURE") {
-          setDirection(step.direction)
-          setTargetTemperatureC(step.targetTemperatureC.toString())
-        } else {
-          setTempBoundaryHighC(step.tempBoundaryHighC.toString())
-          setTempBoundaryLowC(step.tempBoundaryLowC.toString())
-        }
       }
     }
   }, [isEditing, stepId, editingRecipe])
@@ -69,38 +50,11 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
       return
     }
 
-    let step: Step
-    if (type === "TARGET_TEMPERATURE") {
-      const targetTemp = parseFloat(targetTemperatureC)
-      if (isNaN(targetTemp)) {
-        console.log("Invalid target temperature:", targetTemperatureC)
-        return
-      }
-      step = {
-        stepId: isEditing ? stepId! : `step-${Date.now()}`,
-        type,
-        name,
-        durationMinutes: duration,
-        direction,
-        targetTemperatureC: targetTemp,
-        events: isEditing ? editingRecipe!.steps.find((s) => s.stepId === stepId)!.events : [],
-      } as TemperatureTargetStep
-    } else {
-      const high = parseFloat(tempBoundaryHighC)
-      const low = parseFloat(tempBoundaryLowC)
-      if (isNaN(high) || isNaN(low)) {
-        console.log("Invalid boundaries:", tempBoundaryHighC, tempBoundaryLowC)
-        return
-      }
-      step = {
-        stepId: isEditing ? stepId! : `step-${Date.now()}`,
-        type,
-        name,
-        durationMinutes: duration,
-        tempBoundaryHighC: high,
-        tempBoundaryLowC: low,
-        events: isEditing ? editingRecipe!.steps.find((s) => s.stepId === stepId)!.events : [],
-      } as TemperatureMaintenanceStep
+    const step: Step = {
+      stepId: isEditing ? stepId! : `step-${Date.now()}`,
+      name,
+      durationMinutes: duration,
+      events: isEditing ? editingRecipe!.steps.find((s) => s.stepId === stepId)!.events : [],
     }
 
     if (isEditing) {
@@ -155,69 +109,6 @@ export default function StepEditorScreen({}: StepEditorScreenProps) {
             status={durationError ? "error" : undefined}
             helper={durationError}
           />
-
-          <Text text="Type" preset="formLabel" />
-          <View style={{ flexDirection: "column", marginVertical: 8 }}>
-            <Button
-              text="Target Temperature"
-              onPress={() => setType("TARGET_TEMPERATURE")}
-              preset={type === "TARGET_TEMPERATURE" ? "filled" : "default"}
-              style={{ marginBottom: 8 }}
-            />
-            <Button
-              text="Temperature Maintenance"
-              onPress={() => setType("TEMPERATURE_MAINTENANCE")}
-              preset={type === "TEMPERATURE_MAINTENANCE" ? "filled" : "default"}
-            />
-          </View>
-
-          {type === "TARGET_TEMPERATURE" && (
-            <>
-              <Text text="Direction" preset="formLabel" />
-              <View style={{ flexDirection: "row", marginVertical: 8 }}>
-                <Button
-                  text="Heating"
-                  onPress={() => setDirection("HEATING")}
-                  preset={direction === "HEATING" ? "filled" : "default"}
-                  style={{ marginRight: 8 }}
-                />
-                <Button
-                  text="Cooling"
-                  onPress={() => setDirection("COOLING")}
-                  preset={direction === "COOLING" ? "filled" : "default"}
-                  style={{ marginRight: 8 }}
-                />
-              </View>
-
-              <TextField
-                label="Target Temperature (°C)"
-                value={targetTemperatureC}
-                onChangeText={setTargetTemperatureC}
-                placeholder="70"
-                keyboardType="numeric"
-              />
-            </>
-          )}
-
-          {type === "TEMPERATURE_MAINTENANCE" && (
-            <>
-              <TextField
-                label="High Boundary (°C)"
-                value={tempBoundaryHighC}
-                onChangeText={setTempBoundaryHighC}
-                placeholder="75"
-                keyboardType="numeric"
-              />
-
-              <TextField
-                label="Low Boundary (°C)"
-                value={tempBoundaryLowC}
-                onChangeText={setTempBoundaryLowC}
-                placeholder="65"
-                keyboardType="numeric"
-              />
-            </>
-          )}
 
           <Text
             style={{
