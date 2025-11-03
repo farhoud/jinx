@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from "react"
+import { createContext, useContext, useState, useEffect, useRef, useReducer } from "react"
 import { Alert } from "react-native"
 import { useRouter } from "expo-router"
 
@@ -10,16 +10,92 @@ import {
   TemperatureTrigger,
   TimeIntervalTrigger,
   BoundaryTrigger,
+  EventState,
+  EventStates,
+  EventStatus,
 } from "@/types/recipeTypes"
 import { loadRecipes } from "@/utils/storage/recipeStorage"
 
+type EventAction =
+  | { type: "ACTIVATE_EVENT"; eventId: string }
+  | { type: "DEACTIVATE_EVENT"; eventId: string }
+  | { type: "DISMISS_EVENT"; eventId: string }
+  | { type: "DISMISS_TRIGGER"; eventId: string; triggerIndex: number }
+  | { type: "RESET_EVENTS"; events: RecipeEvent[] }
+  | { type: "UPDATE_ELAPSED_TIME"; eventId: string; elapsedTime: number }
+
+const eventReducer = (state: EventStates, action: EventAction): EventStates => {
+  const newState = new Map(state)
+  switch (action.type) {
+    case "ACTIVATE_EVENT":
+      if (newState.has(action.eventId)) {
+        const eventState = newState.get(action.eventId)!
+        newState.set(action.eventId, { ...eventState, status: "active", activatedAt: Date.now() })
+      }
+      break
+    case "DEACTIVATE_EVENT":
+      if (newState.has(action.eventId)) {
+        const eventState = newState.get(action.eventId)!
+        newState.set(action.eventId, { ...eventState, status: "pending" })
+      }
+      break
+    case "DISMISS_EVENT":
+      if (newState.has(action.eventId)) {
+        const eventState = newState.get(action.eventId)!
+        newState.set(action.eventId, { ...eventState, status: "dismissed" })
+      }
+      break
+    case "DISMISS_TRIGGER":
+      if (newState.has(action.eventId)) {
+        const eventState = newState.get(action.eventId)!
+        if (eventState.dismissedTriggers && eventState.event.trigger.type === "TIME_INTERVAL") {
+          const newDismissed = new Set(eventState.dismissedTriggers)
+          newDismissed.add(action.triggerIndex)
+          const trigger = eventState.event.trigger as TimeIntervalTrigger
+          const repeatTimes = trigger.repeatTimes || 1
+          newState.set(action.eventId, { ...eventState, dismissedTriggers: newDismissed })
+          if (newDismissed.size >= repeatTimes) {
+            newState.set(action.eventId, {
+              ...eventState,
+              status: "dismissed",
+              dismissedTriggers: newDismissed,
+            })
+          }
+        }
+      }
+      break
+    case "RESET_EVENTS":
+      const resetMap = new Map<string, EventState>()
+      action.events.forEach((event) => {
+        resetMap.set(event.eventId, {
+          event,
+          status: "pending",
+          elapsedTime: 0,
+          dismissedTriggers: event.trigger.type === "TIME_INTERVAL" ? new Set() : undefined,
+        })
+      })
+      return resetMap
+    case "UPDATE_ELAPSED_TIME":
+      if (newState.has(action.eventId)) {
+        const eventState = newState.get(action.eventId)!
+        newState.set(action.eventId, { ...eventState, elapsedTime: action.elapsedTime })
+      }
+      break
+  }
+  return newState
+}
 type RecipeContextType = {
   recipes: Recipe[]
   currentRecipe: Recipe | null
   currentStepIndex: number
   isBrewing: boolean
   stepStartTime: number | null
-  activeEvents: Map<string, RecipeEvent>
+  eventStates: EventStates
+  getActiveEvents: () => RecipeEvent[]
+  getPendingEvents: () => RecipeEvent[]
+  getElapsedTime: (eventId: string) => number
+  dismissEvent: (eventId: string) => void
+  dismissTrigger: (eventId: string, triggerIndex: number) => void
   editRecipe: (recipeId: string) => void
   deleteRecipe: (recipeId: string) => void
   newRecipe: () => void
@@ -27,7 +103,6 @@ type RecipeContextType = {
   startBrewing: () => void
   stopBrewing: () => void
   nextStep: () => void
-  deactivateEvent: (eventId: string) => void
 }
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined)
@@ -45,7 +120,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isBrewing, setIsBrewing] = useState(false)
   const [stepStartTime, setStepStartTime] = useState<number | null>(null)
-  const [activeEvents, setActiveEvents] = useState<Map<string, RecipeEvent>>(new Map())
+  const [eventStates, dispatch] = useReducer(eventReducer, new Map())
   const { temperatureReading: currentTemp } = useTemperatureDevice()
 
   const timersRef = useRef<number[]>([])
@@ -79,7 +154,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCurrentStepIndex(0)
     setIsBrewing(false)
     setStepStartTime(null)
-    setActiveEvents(new Map())
+    dispatch({ type: "RESET_EVENTS", events: recipe.steps[0]?.events || [] })
     lastEventFireRef.current.clear()
   }
 
@@ -87,7 +162,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!currentRecipe) return
     setIsBrewing(true)
     setStepStartTime(Date.now())
-    setActiveEvents(new Map())
+    dispatch({ type: "RESET_EVENTS", events: currentRecipe.steps[0].events })
     lastEventFireRef.current.clear()
     setupStepTriggers(currentRecipe.steps[0])
   }
@@ -95,7 +170,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const stopBrewing = () => {
     setIsBrewing(false)
     setStepStartTime(null)
-    setActiveEvents(new Map())
+    dispatch({ type: "RESET_EVENTS", events: [] })
     clearAllTimers()
   }
 
@@ -107,7 +182,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     clearAllTimers()
     setCurrentStepIndex((prev) => prev + 1)
     setStepStartTime(Date.now())
-    setActiveEvents(new Map())
+    dispatch({ type: "RESET_EVENTS", events: currentRecipe.steps[currentStepIndex + 1].events })
     setupStepTriggers(currentRecipe.steps[currentStepIndex + 1])
   }
 
@@ -129,7 +204,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         case "TIME_ELAPSED":
           const elapsedTimer = setTimeout(
             () => {
-              activateEvent(event)
+              dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
             },
             trigger.valueMinutes * 60 * 1000,
           )
@@ -152,7 +227,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           clearInterval(intervalTimer)
           return
         }
-        activateEvent(event)
+        dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
         count++
       }, interval)
       intervalTimersRef.current.push(intervalTimer)
@@ -161,16 +236,28 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     timersRef.current.push(startTimer)
   }
 
-  const activateEvent = (event: RecipeEvent) => {
-    setActiveEvents((prev) => new Map(prev.set(event.eventId, event)))
+  const dismissEvent = (eventId: string) => {
+    dispatch({ type: "DISMISS_EVENT", eventId })
   }
 
-  const deactivateEvent = (eventId: string) => {
-    setActiveEvents((prev) => {
-      const newMap = new Map(prev)
-      newMap.delete(eventId)
-      return newMap
-    })
+  const dismissTrigger = (eventId: string, triggerIndex: number) => {
+    dispatch({ type: "DISMISS_TRIGGER", eventId, triggerIndex })
+  }
+
+  const getActiveEvents = (): RecipeEvent[] => {
+    return Array.from(eventStates.values())
+      .filter((state) => state.status === "active")
+      .map((state) => state.event)
+  }
+
+  const getPendingEvents = (): RecipeEvent[] => {
+    return Array.from(eventStates.values())
+      .filter((state) => state.status === "pending")
+      .map((state) => state.event)
+  }
+
+  const getElapsedTime = (eventId: string): number => {
+    return eventStates.get(eventId)?.elapsedTime || 0
   }
 
   const clearAllTimers = () => {
@@ -193,7 +280,8 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const eventKey = `${currentStep.stepId}-${event.eventId}`
       const lastFire = lastEventFireRef.current.get(eventKey) || 0
       const timeSinceLastFire = now - lastFire
-      const isActive = activeEvents.has(event.eventId)
+      const eventState = eventStates.get(event.eventId)
+      const isActive = eventState?.status === "active"
 
       let shouldFire = false
       let shouldDeactivate = false
@@ -238,16 +326,16 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (shouldFire && timeSinceLastFire >= 60000) {
         // Prevent refiring within 1 minute
         lastEventFireRef.current.set(eventKey, now)
-        activateEvent(event)
+        dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
       }
 
       if (shouldDeactivate) {
-        deactivateEvent(event.eventId)
+        dispatch({ type: "DEACTIVATE_EVENT", eventId: event.eventId })
       }
     })
-  }, [currentTemp, currentStepIndex, isBrewing, currentRecipe, activeEvents])
+  }, [currentTemp, currentStepIndex, isBrewing, currentRecipe, eventStates])
 
-  useEffect(() => { })
+  useEffect(() => {})
 
   // Cleanup on unmount
   useEffect(() => {
@@ -261,7 +349,12 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         currentStepIndex,
         isBrewing,
         stepStartTime,
-        activeEvents,
+        eventStates,
+        getActiveEvents,
+        getPendingEvents,
+        getElapsedTime,
+        dismissEvent,
+        dismissTrigger,
         recipes,
         newRecipe,
         deleteRecipe,
@@ -270,7 +363,6 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         startBrewing,
         stopBrewing,
         nextStep,
-        deactivateEvent,
       }}
     >
       {children}
