@@ -1,5 +1,5 @@
-import BrewingScreen from "@/screens/BrewingScreen"
+import RecipesScreen from "@/screens/RecipesScreen"
 
 export default function App() {
-  return <BrewingScreen />
+  return <RecipesScreen />
 }

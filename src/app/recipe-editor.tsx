@@ -217,9 +217,7 @@ export default function RecipeEditorScreen() {
                 {index + 1}. {step.name}
               </Text>
               <Text style={{ color: theme.colors.textDim, fontSize: 14 }}>
-                {step.type === "TARGET_TEMPERATURE"
-                  ? `Target: ${step.targetTemperatureC}°C`
-                  : `Maintain: ${step.tempBoundaryLowC}°C - ${step.tempBoundaryHighC}°C`}
+                Duration: {step.durationMinutes} min, Events: {step.events.length}
               </Text>
             </View>
             <View style={{ flexDirection: "row" }}>
