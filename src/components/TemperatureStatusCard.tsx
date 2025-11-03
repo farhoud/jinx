@@ -11,9 +11,11 @@ import { Text } from "./Text"
 
 const TemperatureStatusCard: React.FC = () => {
   const { status, temperatureReading } = useTemperatureDevice()
-  const { currentRecipe, currentStepIndex, isBrewing, activeEvents, stepStartTime } = useRecipe()
+  const { currentRecipe, currentStepIndex, isBrewing, getActiveEvents, stepStartTime } = useRecipe()
   const { themed } = useAppTheme()
   const [elapsedTime, setElapsedTime] = useState("00:00")
+
+  const activeEvents = getActiveEvents()
 
   useEffect(() => {
     if (!isBrewing || !stepStartTime) {
@@ -65,7 +67,7 @@ const TemperatureStatusCard: React.FC = () => {
       (event) =>
         (event.trigger.type === "TEMPERATURE_TARGET" ||
           event.trigger.type === "BOUNDARY_VIOLATION") &&
-        activeEvents.has(event.eventId),
+        activeEvents.some((e) => e.eventId === event.eventId),
     )
 
     if (activeTempEvents.length > 0) {
@@ -87,7 +89,9 @@ const TemperatureStatusCard: React.FC = () => {
 
     const currentStep = currentRecipe.steps[currentStepIndex]
     const activeTarget = currentStep.events.find(
-      (event) => event.trigger.type === "TEMPERATURE_TARGET" && activeEvents.has(event.eventId),
+      (event) =>
+        event.trigger.type === "TEMPERATURE_TARGET" &&
+        activeEvents.some((e) => e.eventId === event.eventId),
     )
 
     if (activeTarget && activeTarget.trigger.type === "TEMPERATURE_TARGET") {

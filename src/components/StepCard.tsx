@@ -24,8 +24,10 @@ const StepCard: React.FC<StepCardProps> = ({
   isSelected = false,
   showEvents = true,
 }) => {
-  const { activeEvents } = useRecipe()
+  const { getActiveEvents } = useRecipe()
   const { themed } = useAppTheme()
+
+  const activeEventIds = getActiveEvents().map((e) => e.eventId)
 
   const content =
     stepIndex !== undefined && totalSteps !== undefined
@@ -40,7 +42,7 @@ const StepCard: React.FC<StepCardProps> = ({
         <Text text="No events for this step" />
       ) : (
         step.events.map((event) => {
-          const isActive = activeEvents.has(event.eventId)
+          const isActive = activeEventIds.includes(event.eventId)
           return (
             <View key={event.eventId} style={$eventItem}>
               <Icon
@@ -66,7 +68,7 @@ const StepCard: React.FC<StepCardProps> = ({
       style={[
         themed(({ spacing }) => ({ margin: spacing.md })),
         isSelected &&
-        themed(({ colors }) => ({ borderColor: colors.palette.secondary500, borderWidth: 2 })),
+          themed(({ colors }) => ({ borderColor: colors.palette.secondary500, borderWidth: 2 })),
       ]}
       heading={step.name}
       content={content}
@@ -97,13 +99,13 @@ const getTriggerDescription = (trigger: any) => {
 
 const $cardStyle =
   (isSelected: boolean) =>
-    ({ spacing, colors }: any) => ({
-      margin: spacing.md,
-      ...(isSelected && {
-        borderColor: colors.palette.secondary500,
-        borderWidth: 2,
-      }),
-    })
+  ({ spacing, colors }: any) => ({
+    margin: spacing.md,
+    ...(isSelected && {
+      borderColor: colors.palette.secondary500,
+      borderWidth: 2,
+    }),
+  })
 
 const $eventsContainer = {
   marginTop: 8,
