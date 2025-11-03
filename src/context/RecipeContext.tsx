@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react"
-import { Alert, AppState } from "react-native"
-import { Audio } from "expo-av"
-import * as Notifications from "expo-notifications"
+import { Alert } from "react-native"
+import { useRouter } from "expo-router"
 
-import { useBLE } from "@/hooks/useBLE"
+import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
 import {
   Recipe,
   Step,
@@ -12,38 +11,75 @@ import {
   TimeIntervalTrigger,
   BoundaryTrigger,
 } from "@/types/recipeTypes"
+import { loadRecipes } from "@/utils/storage/recipeStorage"
 
 type RecipeContextType = {
+  recipes: Recipe[]
   currentRecipe: Recipe | null
   currentStepIndex: number
   isBrewing: boolean
   stepStartTime: number | null
-  alarmActive: boolean
+  activeEvents: Map<string, RecipeEvent>
+  editRecipe: (recipeId: string) => void
+  deleteRecipe: (recipeId: string) => void
+  newRecipe: () => void
   loadRecipe: (recipe: Recipe) => void
   startBrewing: () => void
   stopBrewing: () => void
   nextStep: () => void
+  deactivateEvent: (eventId: string) => void
 }
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined)
 
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null)
+  const router = useRouter()
+
+  const [recipes, setRecipes] = useState(loadRecipes())
+  const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(() => {
+    if (recipes.length < 1) {
+      return null
+    }
+    return recipes[0]
+  })
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isBrewing, setIsBrewing] = useState(false)
   const [stepStartTime, setStepStartTime] = useState<number | null>(null)
-  const [alarmActive, setAlarmActive] = useState(false)
-  const { temperature: currentTemp } = useBLE()
+  const [activeEvents, setActiveEvents] = useState<Map<string, RecipeEvent>>(new Map())
+  const { temperatureReading: currentTemp } = useTemperatureDevice()
 
   const timersRef = useRef<number[]>([])
   const intervalTimersRef = useRef<number[]>([])
   const lastEventFireRef = useRef<Map<string, number>>(new Map())
+
+  const editRecipe = (recipeId: string) => {
+    router.push({ pathname: "/recipe-editor", params: { recipeId } })
+  }
+
+  const deleteRecipe = (recipeId: string) => {
+    Alert.alert("Delete Recipe", "Are you sure you want to delete this recipe?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteRecipe(recipeId)
+          setRecipes(loadRecipes()) // Refresh the list
+        },
+      },
+    ])
+  }
+
+  const newRecipe = () => {
+    router.push("/recipe-editor")
+  }
 
   const loadRecipe = (recipe: Recipe) => {
     setCurrentRecipe(recipe)
     setCurrentStepIndex(0)
     setIsBrewing(false)
     setStepStartTime(null)
+    setActiveEvents(new Map())
     lastEventFireRef.current.clear()
   }
 
@@ -51,6 +87,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!currentRecipe) return
     setIsBrewing(true)
     setStepStartTime(Date.now())
+    setActiveEvents(new Map())
     lastEventFireRef.current.clear()
     setupStepTriggers(currentRecipe.steps[0])
   }
@@ -58,6 +95,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const stopBrewing = () => {
     setIsBrewing(false)
     setStepStartTime(null)
+    setActiveEvents(new Map())
     clearAllTimers()
   }
 
@@ -69,6 +107,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     clearAllTimers()
     setCurrentStepIndex((prev) => prev + 1)
     setStepStartTime(Date.now())
+    setActiveEvents(new Map())
     setupStepTriggers(currentRecipe.steps[currentStepIndex + 1])
   }
 
@@ -90,7 +129,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         case "TIME_ELAPSED":
           const elapsedTimer = setTimeout(
             () => {
-              fireEvent(event)
+              activateEvent(event)
             },
             trigger.valueMinutes * 60 * 1000,
           )
@@ -113,7 +152,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           clearInterval(intervalTimer)
           return
         }
-        fireEvent(event)
+        activateEvent(event)
         count++
       }, interval)
       intervalTimersRef.current.push(intervalTimer)
@@ -122,78 +161,16 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     timersRef.current.push(startTimer)
   }
 
-  const fireEvent = async (event: RecipeEvent) => {
-    const { notification } = event
-    const isForeground = AppState.currentState === "active"
+  const activateEvent = (event: RecipeEvent) => {
+    setActiveEvents((prev) => new Map(prev.set(event.eventId, event)))
+  }
 
-    // Play sound
-    let sound: Audio.Sound | null = null
-    try {
-      const soundSource =
-        notification.type === "CRITICAL_DIALOG"
-          ? require("assets/alarm.wav")
-          : require("assets/reminder.wav")
-      const { sound: createdSound } = await Audio.Sound.createAsync(soundSource, {
-        isLooping: true,
-      })
-      sound = createdSound
-      await sound.playAsync()
-      setAlarmActive(true)
-    } catch (err) {
-      console.error("Sound play error", err)
-    }
-
-    const stopSound = async () => {
-      if (sound) {
-        try {
-          await sound.unloadAsync()
-          setAlarmActive(false)
-        } catch (err) {
-          console.error("Sound unload error", err)
-        }
-      }
-    }
-
-    if (notification.type === "CRITICAL_DIALOG") {
-      if (isForeground) {
-        Alert.alert("Brewing Alert", notification.message, [
-          {
-            text: "OK",
-            onPress: stopSound,
-          },
-        ])
-      } else {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Brewing Alert",
-            body: notification.message,
-            sound: "default",
-          },
-          trigger: null,
-        })
-        await stopSound()
-      }
-    } else {
-      // Soft reminder
-      if (isForeground) {
-        Alert.alert("Brewing Reminder", notification.message, [
-          {
-            text: "OK",
-            onPress: stopSound,
-          },
-        ])
-      } else {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Brewing Reminder",
-            body: notification.message,
-            sound: "default",
-          },
-          trigger: null,
-        })
-        await stopSound()
-      }
-    }
+  const deactivateEvent = (eventId: string) => {
+    setActiveEvents((prev) => {
+      const newMap = new Map(prev)
+      newMap.delete(eventId)
+      return newMap
+    })
   }
 
   const clearAllTimers = () => {
@@ -205,6 +182,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Monitor temperature-based triggers
   useEffect(() => {
+    console.log("calling too many times")
     if (!isBrewing || !currentRecipe || !currentTemp) return
 
     const currentStep = currentRecipe.steps[currentStepIndex]
@@ -215,11 +193,10 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const eventKey = `${currentStep.stepId}-${event.eventId}`
       const lastFire = lastEventFireRef.current.get(eventKey) || 0
       const timeSinceLastFire = now - lastFire
-
-      // Prevent refiring within 1 minute (60000 ms)
-      if (timeSinceLastFire < 60000) return
+      const isActive = activeEvents.has(event.eventId)
 
       let shouldFire = false
+      let shouldDeactivate = false
 
       switch (trigger.type) {
         case "TEMPERATURE_TARGET":
@@ -235,6 +212,10 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ) {
             shouldFire = true
           }
+          // Deactivate if condition no longer met
+          if (isActive && !shouldFire) {
+            shouldDeactivate = true
+          }
           break
         case "BOUNDARY_VIOLATION":
           const boundaryTrigger = trigger as BoundaryTrigger
@@ -246,15 +227,27 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ) {
             shouldFire = true
           }
+          // Deactivate if condition no longer met
+          if (isActive && !shouldFire) {
+            shouldDeactivate = true
+          }
           break
+        // Time-based events (TIME_INTERVAL, TIME_ELAPSED) are handled separately and stay active once triggered
       }
 
-      if (shouldFire) {
+      if (shouldFire && timeSinceLastFire >= 60000) {
+        // Prevent refiring within 1 minute
         lastEventFireRef.current.set(eventKey, now)
-        fireEvent(event)
+        activateEvent(event)
+      }
+
+      if (shouldDeactivate) {
+        deactivateEvent(event.eventId)
       }
     })
-  }, [currentTemp, currentStepIndex, isBrewing, currentRecipe])
+  }, [currentTemp, currentStepIndex, isBrewing, currentRecipe, activeEvents])
+
+  useEffect(() => { })
 
   // Cleanup on unmount
   useEffect(() => {
@@ -268,11 +261,16 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         currentStepIndex,
         isBrewing,
         stepStartTime,
-        alarmActive,
+        activeEvents,
+        recipes,
+        newRecipe,
+        deleteRecipe,
+        editRecipe,
         loadRecipe,
         startBrewing,
         stopBrewing,
         nextStep,
+        deactivateEvent,
       }}
     >
       {children}
