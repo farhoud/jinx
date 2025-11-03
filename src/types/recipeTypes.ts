@@ -5,7 +5,6 @@ interface Step {
   events: Event[]
 }
 
-
 type TriggerType = "TEMPERATURE_TARGET" | "TIME_INTERVAL" | "BOUNDARY_VIOLATION" | "TIME_ELAPSED"
 
 interface BaseTrigger {
@@ -69,6 +68,18 @@ interface Recipe {
   steps: Step[]
 }
 
+type EventStatus = "pending" | "active" | "dismissed"
+
+interface EventState {
+  event: Event
+  status: EventStatus
+  activatedAt?: number
+  dismissedTriggers?: Set<number>
+  elapsedTime?: number // in seconds
+}
+
+type EventStates = Map<string, EventState>
+
 export type {
   Recipe,
   Step,
@@ -83,4 +94,7 @@ export type {
   SoftReminder,
   TriggerType,
   NotificationType,
+  EventStatus,
+  EventState,
+  EventStates,
 }
