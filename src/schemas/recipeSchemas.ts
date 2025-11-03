@@ -7,11 +7,7 @@ export const triggerTypeSchema = z.enum([
   "TIME_ELAPSED",
 ])
 
-export const stepTypeSchema = z.enum(["TARGET_TEMPERATURE", "TEMPERATURE_MAINTENANCE"])
-
 export const notificationTypeSchema = z.enum(["CRITICAL_DIALOG", "SOFT_REMINDER"])
-
-export const directionSchema = z.enum(["HEATING", "COOLING"])
 
 export const conditionSchema = z.enum([
   "REACHED_OR_EXCEEDED",
@@ -68,35 +64,12 @@ export const eventSchema = z.object({
   notification: notificationSchema,
 })
 
-export const targetTemperatureStepSchema = z.object({
+export const stepSchema = z.object({
   stepId: z.string().min(1).max(50),
-  type: z.literal("TARGET_TEMPERATURE"),
   name: z.string().min(1).max(100),
-  direction: directionSchema,
-  targetTemperatureC: z.number().min(-50).max(150),
   durationMinutes: z.number().min(0).max(1440),
   events: z.array(eventSchema).max(10),
 })
-
-export const temperatureMaintenanceStepSchema = z
-  .object({
-    stepId: z.string().min(1).max(50),
-    type: z.literal("TEMPERATURE_MAINTENANCE"),
-    name: z.string().min(1).max(100),
-    tempBoundaryLowC: z.number().min(-50).max(150),
-    tempBoundaryHighC: z.number().min(-50).max(150),
-    durationMinutes: z.number().min(0).max(1440),
-    events: z.array(eventSchema).max(10),
-  })
-  .refine((data) => data.tempBoundaryLowC < data.tempBoundaryHighC, {
-    message: "Low boundary must be less than high boundary",
-    path: ["tempBoundaryLowC"],
-  })
-
-export const stepSchema = z.discriminatedUnion("type", [
-  targetTemperatureStepSchema,
-  temperatureMaintenanceStepSchema,
-])
 
 export const recipeSchema = z.object({
   recipeId: z.string().min(1).max(50),

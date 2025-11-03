@@ -10,9 +10,6 @@ export const sampleRecipe: Recipe = {
     {
       stepId: "STEP_HEAT_WATER",
       name: "Heating Water",
-      type: "TARGET_TEMPERATURE",
-      direction: "HEATING",
-      targetTemperatureC: 70.0,
       durationMinutes: 0,
       events: [
         {
@@ -44,9 +41,6 @@ export const sampleRecipe: Recipe = {
     {
       stepId: "STEP_MASHING",
       name: "Mashing",
-      type: "TEMPERATURE_MAINTENANCE",
-      tempBoundaryLowC: 65.5,
-      tempBoundaryHighC: 68.5,
       durationMinutes: 70,
       events: [
         {
@@ -134,11 +128,8 @@ export const sampleRecipe: Recipe = {
     },
     // Step 3: Boiling
     {
-      stepId: "STEP_REACH_BOILING",
-      name: "Boil it",
-      type: "TARGET_TEMPERATURE",
-      direction: "HEATING",
-      targetTemperatureC: 100.0,
+      stepId: "STEP_COOLING",
+      name: "Cooling",
       durationMinutes: 0,
       events: [
         {
@@ -156,12 +147,9 @@ export const sampleRecipe: Recipe = {
       ],
     },
     {
-      stepId: "STEP_BOILING",
-      name: "Boiling",
-      type: "TEMPERATURE_MAINTENANCE",
-      tempBoundaryLowC: 95,
-      tempBoundaryHighC: 105,
-      durationMinutes: 60,
+      stepId: "STEP_MASHING",
+      name: "Mashing",
+      durationMinutes: 70,
       events: [
         {
           eventId: "EVT_HOPS_60MIN",
@@ -189,11 +177,8 @@ export const sampleRecipe: Recipe = {
     },
     // Step 4: Cooling
     {
-      stepId: "STEP_COOLING",
-      name: "Cooling",
-      type: "TARGET_TEMPERATURE",
-      direction: "COOLING",
-      targetTemperatureC: 25.0,
+      stepId: "STEP_HEAT_WATER",
+      name: "Heating Water",
       durationMinutes: 0,
       events: [
         {

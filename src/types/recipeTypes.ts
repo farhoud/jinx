@@ -1,27 +1,10 @@
-type StepType = "TARGET_TEMPERATURE" | "TEMPERATURE_MAINTENANCE"
-
-interface BaseStep {
+interface Step {
   stepId: string
-  type: StepType
+  name: string
   durationMinutes: number
   events: Event[]
 }
 
-interface TemperatureTargetStep extends BaseStep {
-  type: "TARGET_TEMPERATURE"
-  name: string
-  direction: "HEATING" | "COOLING"
-  targetTemperatureC: number
-}
-
-interface TemperatureMaintenanceStep extends BaseStep {
-  type: "TEMPERATURE_MAINTENANCE"
-  name: string
-  tempBoundaryHighC: number
-  tempBoundaryLowC: number
-}
-
-type Step = TemperatureTargetStep | TemperatureMaintenanceStep
 
 type TriggerType = "TEMPERATURE_TARGET" | "TIME_INTERVAL" | "BOUNDARY_VIOLATION" | "TIME_ELAPSED"
 
@@ -89,9 +72,6 @@ interface Recipe {
 export type {
   Recipe,
   Step,
-  BaseStep,
-  TemperatureTargetStep,
-  TemperatureMaintenanceStep,
   Event,
   Trigger,
   TemperatureTrigger,
@@ -101,7 +81,6 @@ export type {
   Notification,
   CriticalDialog,
   SoftReminder,
-  StepType,
   TriggerType,
   NotificationType,
 }
