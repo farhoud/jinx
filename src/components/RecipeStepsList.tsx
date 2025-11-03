@@ -17,15 +17,18 @@ const RecipeStepsList: React.FC<RecipeStepsListProps> = ({
   currentStepIndex,
   isBrewing,
 }) => {
-  const getStepTypeIcon = (type: string) => {
-    switch (type) {
-      case "TARGET_TEMPERATURE":
-        return "thermometer"
-      case "TEMPERATURE_MAINTENANCE":
-        return "shield-checkmark"
-      default:
-        return "help-circle"
-    }
+  const getStepTypeIcon = (step: any) => {
+    // Determine icon based on events in the step
+    const hasTempTarget = step.events.some((e: any) => e.trigger.type === "TEMPERATURE_TARGET")
+    const hasBoundary = step.events.some((e: any) => e.trigger.type === "BOUNDARY_VIOLATION")
+    const hasTimeInterval = step.events.some((e: any) => e.trigger.type === "TIME_INTERVAL")
+    const hasTimeElapsed = step.events.some((e: any) => e.trigger.type === "TIME_ELAPSED")
+
+    if (hasTempTarget) return "thermometer"
+    if (hasBoundary) return "shield-checkmark"
+    if (hasTimeInterval) return "repeat"
+    if (hasTimeElapsed) return "timer"
+    return "help-circle"
   }
 
   const getEventTypeIcon = (type: string) => {
@@ -72,7 +75,7 @@ const RecipeStepsList: React.FC<RecipeStepsListProps> = ({
         >
           <View style={styles.stepHeader}>
             <Text style={styles.stepName}>{step.name}</Text>
-            <Ionicons name={getStepTypeIcon(step.type)} size={20} color="#4caf50" />
+            <Ionicons name={getStepTypeIcon(step)} size={20} color="#4caf50" />
           </View>
           {step.events.length > 0 && (
             <View style={styles.eventsList}>
