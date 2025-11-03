@@ -25,6 +25,10 @@ interface TimeElapsedProgressProps {
    */
   eventMessage?: string
   /**
+   * Whether the event is pending (counting down) or active (triggered).
+   */
+  isPending?: boolean
+  /**
    * Callback when user dismisses the completed event.
    */
   onDismiss?: () => void
@@ -39,12 +43,13 @@ const TimeElapsedProgress: React.FC<TimeElapsedProgressProps> = ({
   currentElapsed,
   eventName,
   eventMessage,
+  isPending = false,
   onDismiss,
   style,
 }) => {
   const { themed, theme } = useAppTheme()
 
-  const progress = Math.min(100, (currentElapsed / totalMinutes) * 100)
+  const progress = isPending ? Math.min(100, (currentElapsed / totalMinutes) * 100) : 100
   const remaining = Math.max(0, totalMinutes - currentElapsed)
   const isComplete = progress >= 100
 
@@ -84,7 +89,14 @@ const TimeElapsedProgress: React.FC<TimeElapsedProgressProps> = ({
                   />
                 </View>
               </View>
-              <Text text={`${Math.round(progress)}% Complete`} style={themed($progressText)} />
+              <Text
+                text={
+                  isPending
+                    ? `Time remaining: ${Math.round(totalMinutes - currentElapsed)} min`
+                    : "Event active"
+                }
+                style={themed($progressText)}
+              />
             </>
           ) : (
             <View style={themed($completedContainer)}>

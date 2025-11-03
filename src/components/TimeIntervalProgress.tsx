@@ -26,6 +26,10 @@ interface TimeIntervalProgressProps {
    */
   currentElapsed: number
   /**
+   * Whether the event is pending.
+   */
+  isPending?: boolean
+  /**
    * Array of dismissed trigger indices.
    */
   dismissedTriggers: number[]
@@ -42,6 +46,7 @@ interface TimeIntervalProgressProps {
 const TimeIntervalProgress: React.FC<TimeIntervalProgressProps> = ({
   event,
   currentElapsed,
+  isPending = false,
   dismissedTriggers,
   onDismissTrigger,
   style,
@@ -68,6 +73,21 @@ const TimeIntervalProgress: React.FC<TimeIntervalProgressProps> = ({
   }
 
   const isTriggered = nextTrigger !== null && Math.abs(nextTrigger - currentElapsed) < 0.1 // small epsilon
+
+  if (isPending) {
+    const timeToStart = startOffsetMinutes - currentElapsed
+    if (timeToStart > 0) {
+      return (
+        <Card
+          style={themed([$container, style])}
+          heading={event.name}
+          content={`Starts in ${Math.round(timeToStart)} min`}
+        />
+      )
+    } else {
+      return null
+    }
+  }
 
   const remaining = nextTrigger ? nextTrigger - currentElapsed : 0
   const progress = nextTrigger ? (currentElapsed / nextTrigger) * 100 : 100

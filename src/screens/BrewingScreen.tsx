@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { View, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
@@ -14,10 +14,9 @@ import { TimeElapsedProgress } from "@/components/TimeElapsedProgress"
 import { TimeIntervalProgress } from "@/components/TimeIntervalProgress"
 import { useRecipe } from "@/context/RecipeContext"
 import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
-import { DeviceConnectionStatus } from "@/components/DeviceConnectionStatus"
 import { useAppTheme } from "@/theme/context"
+import { DeviceConnectionStatus } from "@/components/DeviceConnectionStatus"
 import type { ThemedStyle } from "@/theme/types"
-import { useBrewingEvents } from "@/hooks/useBrewingEvents"
 
 export default function BrewingScreen() {
   const router = useRouter()
@@ -26,21 +25,99 @@ export default function BrewingScreen() {
     currentRecipe,
     currentStepIndex,
     isBrewing,
-    startBrewing,
     stepStartTime,
     nextStep,
-    deactivateEvent,
+    startBrewing,
+    eventStates,
+    getActiveEvents,
+    dismissEvent,
+    dismissTrigger,
+    getElapsedTime,
   } = useRecipe()
   const { temperatureReading } = useTemperatureDevice()
   const [viewingStepIndex, setViewingStepIndex] = useState(currentStepIndex)
 
-  const {
-    eventData,
-    dismissEvent,
-    dismissIntervalTrigger,
-    dismissedIntervalTriggers,
-    isEventDismissed,
-  } = useBrewingEvents()
+  const eventData = useMemo(() => {
+    if (!currentRecipe)
+      return {
+        hasTempTarget: false,
+        targetTemp: 0,
+        targetCondition: "REACHED_OR_EXCEEDED" as const,
+        hasBoundaryViolation: false,
+        highBoundary: 100,
+        lowBoundary: 0,
+        boundaryCondition: "ABOVE_HIGH" as const,
+        timeElapsedEvents: [],
+        timeIntervalEvents: [],
+      }
+
+    const currentStep = currentRecipe.steps[currentStepIndex]
+
+    const hasTempTarget = currentStep.events.some((e) => e.trigger.type === "TEMPERATURE_TARGET")
+    const tempTargetEvent = currentStep.events.find(
+      (e) => e.trigger.type === "TEMPERATURE_TARGET",
+    ) as any
+    const targetTemp = tempTargetEvent?.trigger.valueC || 0
+    const targetCondition = tempTargetEvent?.trigger.condition || "REACHED_OR_EXCEEDED"
+
+    const hasBoundaryViolation = currentStep.events.some(
+      (e) => e.trigger.type === "BOUNDARY_VIOLATION",
+    )
+    const boundaryEvents = currentStep.events.filter(
+      (e) => e.trigger.type === "BOUNDARY_VIOLATION",
+    ) as any[]
+    const highBoundaryEvent = boundaryEvents.find((e) => e.trigger.condition === "ABOVE_HIGH")
+    const lowBoundaryEvent = boundaryEvents.find((e) => e.trigger.condition === "BELOW_LOW")
+    const highBoundary = highBoundaryEvent?.trigger.valueC || 100
+    const lowBoundary = lowBoundaryEvent?.trigger.valueC || 0
+    const boundaryCondition = highBoundaryEvent
+      ? "ABOVE_HIGH"
+      : lowBoundaryEvent
+        ? "BELOW_LOW"
+        : ("ABOVE_HIGH" as "ABOVE_HIGH" | "BELOW_LOW")
+
+    const timeElapsedEvents = currentStep.events
+      .filter((e) => e.trigger.type === "TIME_ELAPSED")
+      .map((e: any) => ({
+        eventId: e.eventId,
+        name: e.notification?.message || "Time Elapsed Event",
+        message: e.notification?.message || `After ${e.trigger.valueMinutes} minutes`,
+        totalMinutes: e.trigger.valueMinutes || 0,
+      }))
+      .sort((a, b) => a.totalMinutes - b.totalMinutes)
+
+    const timeIntervalEvents = currentStep.events
+      .filter((e) => e.trigger.type === "TIME_INTERVAL")
+      .map((e: any) => ({
+        eventId: e.eventId,
+        name: e.notification?.message || "Time Interval Event",
+        message: e.notification?.message || `Every ${e.trigger.intervalMinutes} minutes`,
+        intervalMinutes: e.trigger.intervalMinutes || 0,
+        repeatTimes: e.trigger.repeatTimes || 1,
+        startOffsetMinutes: e.trigger.startOffsetMinutes || 0,
+      }))
+
+    return {
+      hasTempTarget,
+      targetTemp,
+      targetCondition,
+      hasBoundaryViolation,
+      highBoundary,
+      lowBoundary,
+      boundaryCondition,
+      timeElapsedEvents,
+      timeIntervalEvents,
+    }
+  }, [currentRecipe, currentStepIndex])
+
+  const isEventDismissed = (eventId: string) => eventStates.get(eventId)?.status === "dismissed"
+
+  const dismissedIntervalTriggers = useMemo(
+    () => (eventId: string) => Array.from(eventStates.get(eventId)?.dismissedTriggers || []),
+    [eventStates],
+  )
+
+  const dismissIntervalTrigger = dismissTrigger
 
   useEffect(() => {
     setViewingStepIndex(currentStepIndex)
@@ -99,25 +176,35 @@ export default function BrewingScreen() {
           condition={eventData.boundaryCondition}
         />
       )}
-      {eventData.timeElapsedEvents.map((event) => (
-        <TimeElapsedProgress
-          key={event.eventId}
-          totalMinutes={event.totalMinutes}
-          currentElapsed={currentElapsedMinutes}
-          eventName={event.name}
-          eventMessage={event.message}
-          onDismiss={() => dismissEvent(event.eventId)}
-        />
-      ))}
-      {eventData.timeIntervalEvents.map((event) => (
-        <TimeIntervalProgress
-          key={event.eventId}
-          event={event}
-          currentElapsed={currentElapsedMinutes}
-          dismissedTriggers={dismissedIntervalTriggers.get(event.eventId) || []}
-          onDismissTrigger={(triggerIndex) => dismissIntervalTrigger(event.eventId, triggerIndex)}
-        />
-      ))}
+      {eventData.timeElapsedEvents.map((event) => {
+        const status = eventStates.get(event.eventId)?.status
+        if (status === "dismissed") return null
+        return (
+          <TimeElapsedProgress
+            key={event.eventId}
+            totalMinutes={event.totalMinutes}
+            currentElapsed={currentElapsedMinutes}
+            eventName={event.name}
+            eventMessage={event.message}
+            isPending={status === "pending"}
+            onDismiss={status === "active" ? () => dismissEvent(event.eventId) : undefined}
+          />
+        )
+      })}
+      {eventData.timeIntervalEvents.map((event) => {
+        const status = eventStates.get(event.eventId)?.status
+        if (status === "dismissed") return null
+        return (
+          <TimeIntervalProgress
+            key={event.eventId}
+            event={event}
+            currentElapsed={currentElapsedMinutes}
+            isPending={status === "pending"}
+            dismissedTriggers={dismissedIntervalTriggers(event.eventId)}
+            onDismissTrigger={(triggerIndex) => dismissTrigger(event.eventId, triggerIndex)}
+          />
+        )
+      })}
       <StepCard
         step={viewingStep}
         stepIndex={viewingStepIndex}
