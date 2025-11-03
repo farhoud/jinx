@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useReducer } from "react"
 import { Alert } from "react-native"
 import { useRouter } from "expo-router"
+import { Audio } from "expo-av"
 
 import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
 import {
@@ -123,9 +124,39 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [eventStates, dispatch] = useReducer(eventReducer, new Map())
   const { temperatureReading: currentTemp } = useTemperatureDevice()
 
+  const [alarmSound, setAlarmSound] = useState<Audio.Sound | null>(null)
+  const [reminderSound, setReminderSound] = useState<Audio.Sound | null>(null)
+
   const timersRef = useRef<number[]>([])
   const intervalTimersRef = useRef<number[]>([])
   const lastEventFireRef = useRef<Map<string, number>>(new Map())
+
+  // Load sound files
+  useEffect(() => {
+    const loadSounds = async () => {
+      try {
+        const { sound: alarm } = await Audio.Sound.createAsync(require("../assets/alarm.wav"))
+        setAlarmSound(alarm)
+        const { sound: reminder } = await Audio.Sound.createAsync(require("../assets/reminder.wav"))
+        setReminderSound(reminder)
+      } catch (error) {
+        console.error("Failed to load sounds:", error)
+      }
+    }
+    loadSounds()
+    return () => {
+      alarmSound?.unloadAsync()
+      reminderSound?.unloadAsync()
+    }
+  }, [])
+
+  const playEventSound = (event: RecipeEvent) => {
+    if (event.notification.type === "CRITICAL_DIALOG") {
+      alarmSound?.replayAsync()
+    } else if (event.notification.type === "SOFT_REMINDER") {
+      reminderSound?.replayAsync()
+    }
+  }
 
   const editRecipe = (recipeId: string) => {
     router.push({ pathname: "/recipe-editor", params: { recipeId } })
@@ -205,6 +236,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const elapsedTimer = setTimeout(
             () => {
               dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
+              playEventSound(event)
             },
             trigger.valueMinutes * 60 * 1000,
           )
@@ -228,6 +260,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           return
         }
         dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
+        playEventSound(event)
         count++
       }, interval)
       intervalTimersRef.current.push(intervalTimer)
@@ -327,6 +360,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Prevent refiring within 1 minute
         lastEventFireRef.current.set(eventKey, now)
         dispatch({ type: "ACTIVATE_EVENT", eventId: event.eventId })
+        playEventSound(event)
       }
 
       if (shouldDeactivate) {
