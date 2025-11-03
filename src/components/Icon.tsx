@@ -8,6 +8,7 @@ import {
   ViewProps,
   ViewStyle,
 } from "react-native"
+import * as LucideIcons from "lucide-react-native"
 
 import { useAppTheme } from "@/theme/context"
 
@@ -15,9 +16,14 @@ export type IconTypes = keyof typeof iconRegistry
 
 type BaseIconProps = {
   /**
-   * The name of the icon
+   * The name of the icon (for local icons)
    */
-  icon: IconTypes
+  icon?: IconTypes
+
+  /**
+   * The name of the Lucide icon
+   */
+  lucideIcon?: string
 
   /**
    * An optional tint color for the icon
@@ -53,6 +59,7 @@ type IconProps = Omit<ViewProps, "style"> & BaseIconProps
 export function PressableIcon(props: PressableIconProps) {
   const {
     icon,
+    lucideIcon,
     color,
     size,
     style: $imageStyleOverride,
@@ -61,6 +68,23 @@ export function PressableIcon(props: PressableIconProps) {
   } = props
 
   const { theme } = useAppTheme()
+
+  if (lucideIcon) {
+    // eslint-disable-next-line import/namespace
+    const LucideIcon = LucideIcons[lucideIcon as keyof typeof LucideIcons] as any
+    if (!LucideIcon) return null
+    return (
+      <TouchableOpacity {...pressableProps} style={$containerStyleOverride}>
+        <LucideIcon
+          size={size ?? 24}
+          color={color ?? theme.colors.text}
+          style={$imageStyleOverride}
+        />
+      </TouchableOpacity>
+    )
+  }
+
+  if (!icon) return null
 
   const $imageStyle: StyleProp<ImageStyle> = [
     $imageStyleBase,
@@ -86,6 +110,7 @@ export function PressableIcon(props: PressableIconProps) {
 export function Icon(props: IconProps) {
   const {
     icon,
+    lucideIcon,
     color,
     size,
     style: $imageStyleOverride,
@@ -94,6 +119,23 @@ export function Icon(props: IconProps) {
   } = props
 
   const { theme } = useAppTheme()
+
+  if (lucideIcon) {
+    // eslint-disable-next-line import/namespace
+    const LucideIcon = LucideIcons[lucideIcon as keyof typeof LucideIcons] as any
+    if (!LucideIcon) return null
+    return (
+      <View {...viewProps} style={$containerStyleOverride}>
+        <LucideIcon
+          size={size ?? 24}
+          color={color ?? theme.colors.text}
+          style={$imageStyleOverride}
+        />
+      </View>
+    )
+  }
+
+  if (!icon) return null
 
   const $imageStyle: StyleProp<ImageStyle> = [
     $imageStyleBase,
