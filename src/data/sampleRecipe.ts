@@ -128,8 +128,8 @@ export const sampleRecipe: Recipe = {
     },
     // Step 3: Boiling
     {
-      stepId: "STEP_COOLING",
-      name: "Cooling",
+      stepId: "STEP_BOILING",
+      name: "Boiling",
       durationMinutes: 0,
       events: [
         {
@@ -137,7 +137,7 @@ export const sampleRecipe: Recipe = {
           trigger: {
             type: "TEMPERATURE_TARGET",
             condition: "REACHED_OR_EXCEEDED",
-            valueC: 100,
+            valueC: 95.5,
           },
           notification: {
             type: "SOFT_REMINDER",
@@ -147,7 +147,7 @@ export const sampleRecipe: Recipe = {
       ],
     },
     {
-      stepId: "STEP_MASHING",
+      stepId: "STEP_HOPS",
       name: "Mashing",
       durationMinutes: 70,
       events: [
@@ -159,18 +159,53 @@ export const sampleRecipe: Recipe = {
           },
           notification: {
             type: "SOFT_REMINDER",
-            message: "Time for Bittering Hops!",
+            message: "Time for Magnom Hop!",
           },
         },
         {
-          eventId: "EVT_BOIL_END",
+          eventId: "EVT_HOPS_20MIN",
+          trigger: {
+            type: "TIME_ELAPSED",
+            valueMinutes: 50,
+          },
+          notification: {
+            type: "SOFT_REMINDER",
+            message: "Time for Mittelfruh Hop!",
+          },
+        },
+        {
+          eventId: "EVT_COOLER_INJECT",
           trigger: {
             type: "TIME_ELAPSED",
             valueMinutes: 60,
           },
           notification: {
+            type: "SOFT_REMINDER",
+            message: "install cooler!",
+          },
+        },
+        {
+          eventId: "EVT_HOPS_END",
+          trigger: {
+            type: "TIME_ELAPSED",
+            valueMinutes: 70,
+          },
+          notification: {
             type: "CRITICAL_DIALOG",
-            message: "Boil complete. Begin cooling.",
+            message: "hops complete. Begin cooling.",
+          },
+        },
+        ,
+        {
+          eventId: "EVT_TEMP_BOUNDARY_LOW",
+          trigger: {
+            type: "BOUNDARY_VIOLATION",
+            condition: "BELOW_LOW",
+            valueC: 95,
+          },
+          notification: {
+            type: "CRITICAL_DIALOG",
+            message: "Temperature too low! Increase heat.",
           },
         },
       ],

@@ -112,62 +112,65 @@ export function TemperatureChart({ style }: TemperatureChartProps) {
   const displayData = showSmooth ? smoothChartData : chartData
 
   return (
-    <Card style={themed([$container, style])} content="Temperature Chart" ContentComponent={
-      <View>
-        <View style={themed($header)}>
-          <View style={themed($toggleContainer)}>
-            <Button
-              text="Raw"
-              preset={showSmooth ? "default" : "filled"}
-              onPress={() => setShowSmooth(false)}
-              style={themed($toggleButton)}
-            />
-            <Button
-              text="Smooth"
-              preset={showSmooth ? "filled" : "default"}
-              onPress={() => setShowSmooth(true)}
-              style={themed($toggleButton)}
-            />
-          </View>
-          <View style={themed($statsContainer)}>
-            <View style={themed($tempContainer)}>
-              <Icon lucideIcon="Thermometer" size={20} color={theme.colors.tint} />
-              <Text
-                text={`${currentTemp?.toFixed(1) || "--"}°C`}
-                preset="heading"
-                size="md"
-                style={themed($tempText)}
+    <Card
+      style={themed([$container, style])}
+      content="Temperature Chart"
+      ContentComponent={
+        <View>
+          <View style={themed($header)}>
+            <View style={themed($toggleContainer)}>
+              <Button
+                text="Raw"
+                preset={showSmooth ? "default" : "filled"}
+                onPress={() => setShowSmooth(false)}
+                style={themed($toggleButton)}
+              />
+              <Button
+                text="Smooth"
+                preset={showSmooth ? "filled" : "default"}
+                onPress={() => setShowSmooth(true)}
+                style={themed($toggleButton)}
               />
             </View>
-            <View style={themed($rateContainer)}>
-              <Icon lucideIcon="TrendingUp" size={16} color={theme.colors.palette.accent500} />
-              <Text text={`${ratePerMinute.toFixed(2)}°`} size="sm" style={themed($rateText)} />
+            <View style={themed($statsContainer)}>
+              <View style={themed($tempContainer)}>
+                <Icon lucideIcon="Thermometer" size={20} color={theme.colors.tint} />
+                <Text
+                  text={`${currentTemp?.toFixed(1) || "--"}°C`}
+                  preset="heading"
+                  size="md"
+                  style={themed($tempText)}
+                />
+              </View>
+              <View style={themed($rateContainer)}>
+                <Icon lucideIcon="TrendingUp" size={16} color={theme.colors.palette.accent500} />
+                <Text text={`${ratePerMinute.toFixed(2)}°`} size="sm" style={themed($rateText)} />
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={themed($chartContainer)}>
-          <LineChart
-            data={displayData}
-            width={300}
-            height={200}
-            spacing={4}
-            color={showSmooth ? theme.colors.palette.accent500 : theme.colors.palette.primary500}
-            thickness={3}
-            yAxisOffset={15}
-            yAxisLabelSuffix="°"
-            hideDataPoints
-            noOfSections={4}
-            scrollToEnd
-            scrollAnimation
-            rulesColor={theme.colors.border}
-            yAxisTextStyle={{ color: theme.colors.text }}
-            backgroundColor={theme.colors.background}
-          />
+          <View style={themed($chartContainer)}>
+            <LineChart
+              data={displayData}
+              width={300}
+              height={200}
+              spacing={4}
+              color={showSmooth ? theme.colors.palette.accent500 : theme.colors.palette.primary500}
+              thickness={3}
+              yAxisOffset={15}
+              yAxisLabelSuffix="°"
+              hideDataPoints
+              noOfSections={4}
+              scrollToEnd
+              scrollAnimation
+              rulesColor={theme.colors.border}
+              yAxisTextStyle={{ color: theme.colors.text }}
+              backgroundColor={theme.colors.background}
+            />
+          </View>
         </View>
-      </View>
-    }>
-    </Card>
+      }
+    ></Card>
   )
 }
 

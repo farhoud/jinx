@@ -3,9 +3,10 @@ import { View, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
-import { StepCard } from "@/components/StepCard"
+import { DeviceConnectionStatus } from "@/components/DeviceConnectionStatus"
 import { PressableIcon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
+import { StepCard } from "@/components/StepCard"
 import { TemperatureChart } from "@/components/TemperatureChart"
 import { TemperatureGauge } from "@/components/TemperatureGauge"
 import { TemperatureProgressBar } from "@/components/TemperatureProgressBar"
@@ -14,9 +15,9 @@ import { TimeIntervalProgress } from "@/components/TimeIntervalProgress"
 import { useRecipe } from "@/context/RecipeContext"
 import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
 import { useAppTheme } from "@/theme/context"
-import { DeviceConnectionStatus } from "@/components/DeviceConnectionStatus"
-import type { ThemedStyle } from "@/theme/types"
 import { spacing } from "@/theme/spacing"
+import type { ThemedStyle } from "@/theme/types"
+import { CustomGauge } from "@/components/CustomGauge"
 
 export default function BrewingScreen() {
   const router = useRouter()
@@ -159,6 +160,13 @@ export default function BrewingScreen() {
         <DeviceConnectionStatus style={themed($connectionStatus)} showText={false} />
       </View>
       <TemperatureChart />
+      <CustomGauge value={20} min={10} max={120} tickLabels={[10, 20, 45, 60]}>
+      </CustomGauge>
+      <TemperatureGauge
+        temperature={50}
+        minTemp={0}
+        maxTemp={120}
+      />
       {eventData.hasTempTarget && eventData.targetTemp && temperatureReading && (
         <TemperatureProgressBar
           currentTemperature={temperatureReading}
@@ -168,10 +176,9 @@ export default function BrewingScreen() {
       )}
       {eventData.hasBoundaryViolation && temperatureReading && (
         <TemperatureGauge
-          currentTemperature={temperatureReading}
-          highBoundary={eventData.highBoundary}
-          lowBoundary={eventData.lowBoundary}
-          condition={eventData.boundaryCondition}
+          temperature={temperatureReading}
+          minTemp={eventData.lowBoundary}
+          maxTemp={eventData.highBoundary}
         />
       )}
       {eventData.timeElapsedEvents.map((event) => {
@@ -239,7 +246,7 @@ const $menuIcon: ThemedStyle<ViewStyle> = ({ spacing }) => ({
 
 const $connectionStatus: ThemedStyle<ViewStyle> = () => ({
   alignSelf: "flex-end",
-  padding: spacing.sm
+  padding: spacing.sm,
 })
 
 const $startButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({

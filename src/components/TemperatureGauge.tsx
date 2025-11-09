@@ -1,168 +1,92 @@
-import React from "react"
-import { View, StyleProp, ViewStyle, TextStyle } from "react-native"
+import { View, StyleSheet } from "react-native"
 
-import { useAppTheme } from "@/theme/context"
-import type { ThemedStyle } from "@/theme/types"
-import { Card } from "./Card"
-import { Text } from "./Text"
+import { CustomGauge, Segment } from "./CustomGauge"
 
-interface TemperatureGaugeProps {
-  /**
-   * Current temperature value.
-   */
-  currentTemperature: number
-  /**
-   * High boundary temperature.
-   */
-  highBoundary: number
-  /**
-   * Low boundary temperature.
-   */
-  lowBoundary: number
-  /**
-   * Condition: ABOVE_HIGH or BELOW_LOW.
-   */
-  condition: "ABOVE_HIGH" | "BELOW_LOW"
-  /**
-   * Optional style override for the container.
-   */
-  style?: StyleProp<ViewStyle>
+export type TempSegment = {
+  to: number // Temperature value (not percentage)
+  color: string
+  width?: number
 }
 
-const TemperatureGauge: React.FC<TemperatureGaugeProps> = ({
-  currentTemperature,
-  highBoundary,
-  lowBoundary,
-  condition,
-  style,
+type Props = {
+  temperature: number
+  minTemp?: number
+  maxTemp?: number
+  tempSegments?: TempSegment[] // Temperature-based segments
+  size?: number
+  arcWidth?: number
+  springConfig?: {
+    damping?: number
+    stiffness?: number
+  }
+  accessibilityLabel?: string
+}
+
+// Convert temperature-based segments to gauge segments (0-1 progress)
+const convertTempSegmentsToGaugeSegments = (
+  tempSegments: TempSegment[],
+  minTemp: number,
+  maxTemp: number,
+): Segment[] => {
+  const range = maxTemp - minTemp
+  return tempSegments
+    .sort((a, b) => a.to - b.to)
+    .map((seg) => ({
+      to: (seg.to - minTemp) / range, // Convert temperature to 0-1 progress
+      color: seg.color,
+      width: seg.width,
+    }))
+}
+
+export const TemperatureGauge: React.FC<Props> = ({
+  temperature,
+  minTemp = 0,
+  maxTemp = 100,
+  tempSegments,
+  size = 240,
+  arcWidth = 20,
+  springConfig = { damping: 20, stiffness: 90 },
+  accessibilityLabel,
 }) => {
-  const { themed, theme } = useAppTheme()
+  // Default temperature segments if none provided (temperature-based)
+  const defaultTempSegments: TempSegment[] = [
+    { to: minTemp + (maxTemp - minTemp) * 0.3, color: "#EA4228" }, // Cold (red)
+    { to: minTemp + (maxTemp - minTemp) * 0.7, color: "#F5CD19" }, // Medium (yellow)
+    { to: maxTemp, color: "#5BE12C" }, // Hot (green)
+  ]
 
-  const range = highBoundary - lowBoundary
-  const position = Math.min(100, Math.max(0, ((currentTemperature - lowBoundary) / range) * 100))
+  const segments = tempSegments || defaultTempSegments
 
-  const isOutOfBounds =
-    (condition === "ABOVE_HIGH" && currentTemperature > highBoundary) ||
-    (condition === "BELOW_LOW" && currentTemperature < lowBoundary)
+  // Convert temperature segments to gauge segments for CustomGauge
+  const gaugeSegments = convertTempSegmentsToGaugeSegments(segments, minTemp, maxTemp)
+
+  const defaultAccessibilityLabel = `Current temperature is ${Math.round(temperature)} degrees Celsius`
 
   return (
-    <Card
-      style={themed([$container, style])}
-      heading={`Boundary: ${lowBoundary}°C - ${highBoundary}°C`}
-      content={`Condition: ${condition.replace("_", " ").toLowerCase()}`}
-      ContentComponent={
-        <View>
-          <Text text={`Current: ${currentTemperature}°C`} style={themed($currentText)} />
-          <View style={themed($gaugeContainer)}>
-            <View style={themed($gaugeBar)}>
-              {/* Low section (red) */}
-              <View style={themed([$gaugeSection, $lowSection])} />
-              {/* Mid section (green) */}
-              <View style={themed([$gaugeSection, $midSection])} />
-              {/* High section (red) */}
-              <View style={themed([$gaugeSection, $highSection])} />
-              {/* Indicator */}
-              <View
-                style={[
-                  themed($indicator),
-                  {
-                    left: `${position}%`,
-                    backgroundColor: isOutOfBounds
-                      ? theme.colors.palette.angry500
-                      : theme.colors.palette.neutral900,
-                  },
-                ]}
-              />
-            </View>
-            <View style={themed($markers)}>
-              <Text text={`${lowBoundary}°`} style={themed($markerText)} />
-              <Text text={`${highBoundary}°`} style={themed([$markerText, $highMarker])} />
-            </View>
-          </View>
-          {isOutOfBounds && <Text text="Out of bounds!" style={themed($warningText)} />}
-        </View>
-      }
-    />
+    <View
+      style={styles.container}
+      accessibilityLabel={accessibilityLabel || defaultAccessibilityLabel}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: minTemp, max: maxTemp, now: temperature }}
+    >
+      <CustomGauge
+        value={temperature} // Pass actual temperature value
+        min={minTemp} // Use new min/max props
+        max={maxTemp}
+        size={size}
+        arcWidth={arcWidth}
+        segments={gaugeSegments}
+        springConfig={springConfig}
+        // tickLabels are now handled automatically by CustomGauge
+      />
+    </View>
   )
 }
 
-const $container: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  margin: spacing.md,
+const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+  },
 })
-
-const $currentText: ThemedStyle<TextStyle> = ({ spacing }) => ({
-  marginBottom: spacing.sm,
-  textAlign: "center",
-})
-
-const $gaugeContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  marginVertical: spacing.sm,
-  alignItems: "center",
-})
-
-const $gaugeBar: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  height: 24,
-  width: "100%",
-  backgroundColor: "transparent",
-  borderWidth: 2,
-  borderColor: "gray",
-  borderRadius: spacing.xs,
-  overflow: "visible",
-  position: "relative",
-  flexDirection: "row",
-})
-
-const $gaugeSection: ThemedStyle<ViewStyle> = () => ({
-  flex: 1,
-  height: "100%",
-})
-
-const $lowSection: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  backgroundColor: colors.palette.angry500,
-  borderTopLeftRadius: 4,
-  borderBottomLeftRadius: 4,
-})
-
-const $midSection: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  backgroundColor: colors.palette.secondary500,
-})
-
-const $highSection: ThemedStyle<ViewStyle> = ({ colors }) => ({
-  backgroundColor: colors.palette.angry500,
-  borderTopRightRadius: 4,
-  borderBottomRightRadius: 4,
-})
-
-const $indicator: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  position: "absolute",
-  top: -spacing.xs,
-  width: 4,
-  height: 24 + spacing.xs * 2,
-  borderRadius: 2,
-  transform: [{ translateX: -2 }],
-})
-
-const $markers: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  flexDirection: "row",
-  justifyContent: "space-between",
-  width: "100%",
-  marginTop: spacing.xs,
-})
-
-const $markerText: ThemedStyle<TextStyle> = ({ colors }) => ({
-  fontSize: 12,
-  color: colors.textDim,
-})
-
-const $highMarker: ThemedStyle<TextStyle> = () => ({
-  textAlign: "right",
-})
-
-const $warningText: ThemedStyle<TextStyle> = ({ colors, spacing }) => ({
-  color: colors.palette.angry500,
-  textAlign: "center",
-  marginTop: spacing.sm,
-  fontWeight: "bold",
-})
-
-export { TemperatureGauge }

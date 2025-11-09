@@ -3,6 +3,7 @@ import { View, StyleProp, ViewStyle, TextStyle } from "react-native"
 
 import { useAppTheme } from "@/theme/context"
 import type { ThemedStyle } from "@/theme/types"
+
 import { Card } from "./Card"
 import { Text } from "./Text"
 

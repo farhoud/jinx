@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useReducer } from "react"
 import { Alert } from "react-native"
-import { useRouter } from "expo-router"
 import { Audio } from "expo-av"
+import { useRouter } from "expo-router"
 
 import { useTemperatureDevice } from "@/context/TemperatureDeviceContext"
 import {
@@ -369,7 +369,7 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     })
   }, [currentTemp, currentStepIndex, isBrewing, currentRecipe, eventStates])
 
-  useEffect(() => { })
+  useEffect(() => {})
 
   // Cleanup on unmount
   useEffect(() => {
